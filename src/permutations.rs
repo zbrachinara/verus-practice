@@ -53,15 +53,13 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     }
     let i = i as usize;
 
-    assert(bits[i - 1] < bits[i as int]);
-
     let mut j = bits.len() - 1;
     while (bits[j] <= bits[i - 1])
         invariant
+            bits[i - 1] < bits[i as int],
             0 < i <= j < bits.len(),
     {
         j -= 1;
-        assert(i == j ==> bits[i - 1] < bits[j as int]);
     }
 
     return false;
@@ -88,6 +86,18 @@ exec fn permut(bits: &mut [u32]) -> Vec<Vec<u32>>
     }
 
     result
+}
+
+closed spec fn f(x: int) -> int {
+    -x
+}
+
+proof fn trial(x: int) -> int {
+    let y: int = 1;
+
+    assert(x == y ==> f(x) == f(y));
+
+    x
 }
 
 } // verus!
