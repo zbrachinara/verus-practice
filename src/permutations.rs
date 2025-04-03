@@ -21,6 +21,24 @@ verus! {
 //     }
 //     result
 // }
+spec fn is_permut(f:spec_fn(int)->int,n:nat) -> bool {
+    (forall|i| 0<=i<n ==> 0<=#[trigger] f(i)<n) && (forall|i,j| #![trigger f(i), f(j)](0<=i<n && 0<=j<n) ==> ( (f(i)==f(j)))==>(i==j))
+}
+spec fn permut_witness<T>(a:Seq<T>,b:Seq<T>,f:spec_fn(int)->int) -> bool{
+    a.len()==b.len() && is_permut(f,a.len()) && forall|i| 0<=i<a.len() ==> a[i]==b[f(i)]
+}
+spec fn is_permut_of<T>(a:Seq<T>,b:Seq<T>) -> bool {
+    exists|f| permut_witness(a,b,f)
+}
+proof fn transitive<T>(a:Seq<T>,b:Seq<T>,c:Seq<T>) requires is_permut_of(a,b), is_permut_of(b,c),ensures is_permut_of(a,c) {
+    assert(a.len()==c.len());
+    let f=choose |f| permut_witness(a,b,f);
+    let g=choose |g| permut_witness(b,c,g);
+    assert({permut_witness(a,c,|i| g(f(i)))})
+}
+proof fn reflexive<T>(a:Seq<T>) ensures is_permut_of(a,a) {
+    assert(permut_witness(a,a,|i| i));
+}
 pub assume_specification[ <[u32]>::sort_specced ](slice: &mut [u32])
     ensures
         forall|i, j| 0 <= i <= j < slice.len() ==> slice[i] <= slice[j],
@@ -38,8 +56,16 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     requires
         old(bits).len() < BITS_SIZE,
     ensures
-        old(bits).len() == bits.len(),
+        old(bits).len() == bits.len(),is_permut_of(bits@, old(bits)@)
 {
+    
+    
+    proof {
+        
+        reflexive(bits@);
+        assert(is_permut_of(bits@, old(bits)@))
+    }
+    assert(false);
     let mut i = (bits.len() as i64) - 1;
     while (i > 0 && bits[(i - 1) as usize] >= bits[i as usize])
         invariant
@@ -49,6 +75,7 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     {
         i -= 1;
     }
+    
     if (i <= 0) {
         return false;
     }
@@ -63,14 +90,13 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     {
         j -= 1;
     }
-    let j = j as usize;
 
     let temp = bits[i - 1];
     bits[i - 1] = bits[j];
     bits[j] = temp;
 
     // technically deviates from the problem since not mutating the original j, i, or temp anymore
-    let mut j = bits.len() - 1;
+    j = bits.len() - 1;
     while (i < j)
         invariant
             old(bits).len() == bits.len(),
@@ -107,18 +133,6 @@ exec fn permut(bits: &mut [u32]) -> Vec<Vec<u32>>
     }
 
     result
-}
-
-closed spec fn f(x: int) -> int {
-    -x
-}
-
-proof fn trial(x: int) -> int {
-    let y: int = 1;
-
-    assert(x == y ==> f(x) == f(y));
-
-    x
 }
 
 } // verus!
