@@ -43,10 +43,8 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     let mut i = (bits.len() as i64) - 1;
     while (i > 0 && bits[(i - 1) as usize] >= bits[i as usize])
         invariant
-            i
-                < bits.len(),
-            // ensures i <= 0 || (bits[(i - 1) as int] < bits[i as int])
-
+            i < bits.len(),
+            forall|j| i < j < bits.len() ==> #[trigger] bits[j] <= bits[i as int],
     {
         i -= 1;
     }
@@ -55,13 +53,15 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     }
     let i = i as usize;
 
+    assert(bits[i - 1] < bits[i as int]);
+
     let mut j = bits.len() - 1;
     while (bits[j] <= bits[i - 1])
         invariant
             0 < i <= j < bits.len(),
     {
-        assume(bits[j as int] != bits[i - 1]);
         j -= 1;
+        assert(i == j ==> bits[i - 1] < bits[j as int]);
     }
 
     return false;
