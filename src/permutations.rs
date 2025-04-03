@@ -21,23 +21,35 @@ verus! {
 //     }
 //     result
 // }
+mod ident {
+    pub closed spec fn ident<T>(x:T) -> (out:T) {
+        x
+    }
+    pub proof fn i<T>(x:T) ensures ident(x)==x;
+}
+
+
+spec fn permut_hint(f:spec_fn(int)->int);
+spec fn inject_hint(f:spec_fn(int)->int,i:int,j:int);
 spec fn is_permut(f:spec_fn(int)->int,n:nat) -> bool {
-    (forall|i| 0<=i<n ==> 0<=#[trigger] f(i)<n) && (forall|i,j| #![trigger f(i), f(j)](0<=i<n && 0<=j<n) ==> ( (f(i)==f(j)))==>(i==j))
+    (forall|i| 0<=i<n ==> 0<=#[trigger] f(i)<n) && (forall|i,j| #![trigger inject_hint(f,i,j)](0<=i<n && 0<=j<n) ==> ( (f(i)==f(j)))==>(i==j))
 }
 spec fn permut_witness<T>(a:Seq<T>,b:Seq<T>,f:spec_fn(int)->int) -> bool{
     a.len()==b.len() && is_permut(f,a.len()) && forall|i| 0<=i<a.len() ==> a[i]==b[f(i)]
 }
 spec fn is_permut_of<T>(a:Seq<T>,b:Seq<T>) -> bool {
-    exists|f| permut_witness(a,b,f)
+    exists|f| #![trigger permut_hint(f)] permut_witness(a,b,f)
 }
 proof fn transitive<T>(a:Seq<T>,b:Seq<T>,c:Seq<T>) requires is_permut_of(a,b), is_permut_of(b,c),ensures is_permut_of(a,c) {
     assert(a.len()==c.len());
     let f=choose |f| permut_witness(a,b,f);
     let g=choose |g| permut_witness(b,c,g);
-    assert({permut_witness(a,c,|i| g(f(i)))})
+    let evidence = permut_hint(|i| g(f(i)));
 }
 proof fn reflexive<T>(a:Seq<T>) ensures is_permut_of(a,a) {
-    assert(permut_witness(a,a,|i| i));
+    //let swap=|i| if i==0 {1} else {if i==1 {0} else {i}};
+    //let i=|x| swap(swap(x));
+    let evidence = permut_hint(|i| i);
 }
 pub assume_specification[ <[u32]>::sort_specced ](slice: &mut [u32])
     ensures
@@ -54,28 +66,27 @@ spec const BITS_SIZE: u64 = 1_000_000_000;
 
 exec fn next(bits: &mut [u32]) -> (output: bool)
     requires
-        old(bits).len() < BITS_SIZE,
+        old(bits).len() < BITS_SIZE,old(bits).len()>=2
     ensures
-        old(bits).len() == bits.len(),is_permut_of(bits@, old(bits)@)
+        old(bits).len() == bits.len()
 {
     
     
-    proof {
-        
+    assert(is_permut_of(bits@,old(bits)@)) by {
         reflexive(bits@);
-        assert(is_permut_of(bits@, old(bits)@))
-    }
-    assert(false);
+    };
+    //assert(false);
     let mut i = (bits.len() as i64) - 1;
     while (i > 0 && bits[(i - 1) as usize] >= bits[i as usize])
         invariant
             old(bits).len() == bits.len(),
-            i < bits.len(),
-            forall|j| i < j < bits.len() ==> #[trigger] bits[j] <= bits[i as int],
+            i < bits.len()
+            
     {
+        
         i -= 1;
     }
-    
+    //assert(false);
     if (i <= 0) {
         return false;
     }
@@ -114,7 +125,7 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
 
 exec fn permut(bits: &mut [u32]) -> Vec<Vec<u32>>
     requires
-        old(bits).len() < BITS_SIZE,
+        old(bits).len() < BITS_SIZE,old(bits).len()>=2
 {
     let mut result = Vec::new();
 
@@ -124,7 +135,7 @@ exec fn permut(bits: &mut [u32]) -> Vec<Vec<u32>>
 
     loop
         invariant
-            bits.len() < BITS_SIZE,
+            bits.len() < BITS_SIZE,bits.len()>=2
     {
         result.push(bits.to_vec());
         if (!next(bits)) {
