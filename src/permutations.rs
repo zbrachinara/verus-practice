@@ -43,6 +43,7 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     let mut i = (bits.len() as i64) - 1;
     while (i > 0 && bits[(i - 1) as usize] >= bits[i as usize])
         invariant
+            old(bits).len() == bits.len(),
             i < bits.len(),
             forall|j| i < j < bits.len() ==> #[trigger] bits[j] <= bits[i as int],
     {
@@ -51,18 +52,38 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     if (i <= 0) {
         return false;
     }
-    let i = i as usize;
+    let mut i = i as usize;
 
     let mut j = bits.len() - 1;
     while (bits[j] <= bits[i - 1])
         invariant
+            old(bits).len() == bits.len(),
             bits[i - 1] < bits[i as int],
             0 < i <= j < bits.len(),
     {
         j -= 1;
     }
+    let j = j as usize;
 
-    return false;
+    let temp = bits[i - 1];
+    bits[i - 1] = bits[j];
+    bits[j] = temp;
+
+    // technically deviates from the problem since not mutating the original j, i, or temp anymore
+    let mut j = bits.len() - 1;
+    while (i < j)
+        invariant
+            old(bits).len() == bits.len(),
+            i - 1 <= j < bits.len(),
+    {
+        let temp = bits[i];
+        bits[i] = bits[j];
+        bits[j] = temp;
+        i += 1;
+        j -= 1;
+    }
+
+    true
 }
 
 exec fn permut(bits: &mut [u32]) -> Vec<Vec<u32>>
