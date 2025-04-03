@@ -32,7 +32,7 @@ mod ident {
 spec fn permut_hint(f:spec_fn(int)->int);
 spec fn inject_hint(f:spec_fn(int)->int,i:int,j:int);
 spec fn is_permut(f:spec_fn(int)->int,n:nat) -> bool {
-    (forall|i| 0<=i<n ==> 0<=#[trigger] f(i)<n) && (forall|i,j| #![trigger inject_hint(f,i,j)](0<=i<n && 0<=j<n) ==> ( (f(i)==f(j)))==>(i==j))
+    (forall|i| 0<=i<n ==> (0<=#[trigger] f(i)<n)) && (forall|i,j| #![trigger inject_hint(f,i,j)](0<=i<n && 0<=j<n) ==> ( (f(i)==f(j)))==>(i==j))
 }
 spec fn permut_witness<T>(a:Seq<T>,b:Seq<T>,f:spec_fn(int)->int) -> bool{
     a.len()==b.len() && is_permut(f,a.len()) && forall|i| 0<=i<a.len() ==> a[i]==b[f(i)]
@@ -40,11 +40,38 @@ spec fn permut_witness<T>(a:Seq<T>,b:Seq<T>,f:spec_fn(int)->int) -> bool{
 spec fn is_permut_of<T>(a:Seq<T>,b:Seq<T>) -> bool {
     exists|f| #![trigger permut_hint(f)] permut_witness(a,b,f)
 }
+spec fn never(i:int);
+spec fn b1(i:int)->bool;
+spec fn b2(i:int)->bool;
+spec fn t1() -> bool {
+    forall|i| #![trigger never(i)] b1(i)
+}
+spec fn t2() -> bool {
+    forall|i| #![trigger never(i)] b2(i)
+}
+proof fn conj() requires t1(),t2() {
+    assert(t1());
+    assert forall|i| b1(i) by {
+        let e1=never(i);
+    };
+    assert forall|i| b2(i) by {
+        let e2=never(i);
+    };
+    assert(forall|i| #![trigger never(i)] b1(i));
+
+}
 proof fn transitive<T>(a:Seq<T>,b:Seq<T>,c:Seq<T>) requires is_permut_of(a,b), is_permut_of(b,c),ensures is_permut_of(a,c) {
     assert(a.len()==c.len());
     let f=choose |f| permut_witness(a,b,f);
+    assert(is_permut(f,a.len()));
     let g=choose |g| permut_witness(b,c,g);
-    let evidence = permut_hint(|i| g(f(i)));
+    let comp=|i| g(f(i));
+    let evidence = permut_hint(comp);
+    assert(is_permut(comp,a.len())) by {
+        assert forall|i,j| #![trigger comp(i),comp(j)](0<=i<a.len() && 0<=j<a.len()) ==> ( (comp(i)==comp(j)))==>(i==j) by {
+            let (e1,e2) = (inject_hint(f,i,j),inject_hint(g,f(i),f(j)));
+        }
+    }
 }
 proof fn reflexive<T>(a:Seq<T>) ensures is_permut_of(a,a) {
     //let swap=|i| if i==0 {1} else {if i==1 {0} else {i}};
