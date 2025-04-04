@@ -21,12 +21,6 @@ verus! {
 //     }
 //     result
 // }
-mod ident {
-    pub closed spec fn ident<T>(x:T) -> (out:T) {
-        x
-    }
-    pub proof fn i<T>(x:T) ensures ident(x)==x;
-}
 
 
 spec fn permut_hint(f:spec_fn(int)->int);
@@ -39,26 +33,6 @@ spec fn permut_witness<T>(a:Seq<T>,b:Seq<T>,f:spec_fn(int)->int) -> bool{
 }
 spec fn is_permut_of<T>(a:Seq<T>,b:Seq<T>) -> bool {
     exists|f| #![trigger permut_hint(f)] permut_witness(a,b,f)
-}
-spec fn never(i:int);
-spec fn b1(i:int)->bool;
-spec fn b2(i:int)->bool;
-spec fn t1() -> bool {
-    forall|i| #![trigger never(i)] b1(i)
-}
-spec fn t2() -> bool {
-    forall|i| #![trigger never(i)] b2(i)
-}
-proof fn conj() requires t1(),t2() {
-    assert(t1());
-    assert forall|i| b1(i) by {
-        let e1=never(i);
-    };
-    assert forall|i| b2(i) by {
-        let e2=never(i);
-    };
-    assert(forall|i| #![trigger never(i)] b1(i));
-
 }
 proof fn transitive<T>(a:Seq<T>,b:Seq<T>,c:Seq<T>) requires is_permut_of(a,b), is_permut_of(b,c),ensures is_permut_of(a,c) {
     assert(a.len()==c.len());
@@ -83,6 +57,12 @@ pub assume_specification[ <[u32]>::sort_specced ](slice: &mut [u32])
         forall|i, j| 0 <= i <= j < slice.len() ==> slice[i] <= slice[j],
         old(slice).len() == slice.len(),
 ;
+spec fn lexhint(a:Seq<u32>,b:Seq<u32>,i:int);
+spec fn lenlex_less(a:Seq<u32>,b:Seq<u32>) -> bool {
+    a.len()<b.len() || (a.len()==b.len() && exists |i:int|#![trigger lexhint(a,b,i)] 0<=i<a.len() && a[i]<b[i] && (forall |j:int| 0<=j<i==>a[j]==b[j]))
+}
+
+
 
 pub assume_specification<T: Clone>[ <[T]>::to_vec ](slice: &[T]) -> (out: Vec<T>)
     ensures
@@ -97,26 +77,24 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     requires
         old(bits).len() < BITS_SIZE,old(bits).len()>=2
     ensures
-        old(bits).len() == bits.len(), is_permut_of(bits@,old(bits)@)
+        is_permut_of(bits@,old(bits)@),
+        output==false ==> bits==old(bits),
+        output==true ==> lenlex_less(old(bits)@, bits@)
 {
     
     
     assert(is_permut_of(bits@,old(bits)@)) by {
         reflexive(bits@);
     };
-    //assert(false);
     let mut i = (bits.len() as i64) - 1;
     while (i > 0 && bits[(i - 1) as usize] >= bits[i as usize])
         invariant
             old(bits).len() == bits.len(),
             i < bits.len()
-            
     {
         
         i -= 1;
     }
-    assert(is_permut_of(bits@, old(bits)@));
-    //assert(false);
     if (i <= 0) {
         return false;
     }
@@ -131,21 +109,27 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     {
         j -= 1;
     }
-    assert(is_permut_of(bits@, old(bits)@));
     let temp = bits[i - 1];
     bits[i - 1] = bits[j];
     bits[j] = temp;
+    assert(lenlex_less(old(bits)@, bits@)) by {
+        let evidence=lexhint(old(bits)@,bits@,i-1);
+    }
     proof {
         let p= |k| if k==i-1 {j as int} else {if k==j {i-1 as int} else {k}};
         let evidence=permut_hint(p);
     }
-    // technically deviates from the problem since not mutating the original j, i, or temp anymore
+    let ghost di = i-1;
     j = bits.len() - 1;
     while (i < j)
         invariant
             old(bits).len() == bits.len(),
             i - 1 <= j < bits.len(),
-            is_permut_of(bits@, old(bits)@)
+            is_permut_of(bits@, old(bits)@),
+            old(bits)[di]<bits[di],
+            0<=di,
+            forall |k| 0<=k<di ==> old(bits)[k]==bits[k],
+            i>di,
     {
         let ghost obits=bits@;
         let temp = bits[i];
@@ -157,15 +141,15 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
             let evidence=permut_hint(p);
         }
         proof {
-            assert(is_permut_of(obits,old(bits)@));
-            assert(is_permut_of(bits@,obits));
             assert(is_permut_of(bits@,old(bits)@)) by {
                 transitive(bits@,obits,old(bits)@);
             };
         }
-        assert(is_permut_of(bits@, old(bits)@));
         i += 1;
         j -= 1;
+    }
+    assert(lenlex_less(old(bits)@, bits@)) by {
+        let evidence=lexhint(old(bits)@,bits@,di);
     }
     true
 }
