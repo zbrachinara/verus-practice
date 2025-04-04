@@ -12,15 +12,6 @@ impl SpecSlice for [u32] {
 
 verus! {
 
-// spec fn permut(bits : &[int]) -> Seq<int> {
-//     let mut result = Seq::empty();
-//     let mut result2 = Seq::<u32>::empty();
-//     let mut range = (1..10u32);
-//     for i in 1..10u32 {
-//         result2 = result2.push(range.next().unwrap());
-//     }
-//     result
-// }
 uninterp spec fn permut_hint(f: spec_fn(int) -> int);
 
 uninterp spec fn inject_hint(f: spec_fn(int) -> int, i: int, j: int);
@@ -77,7 +68,7 @@ pub assume_specification[ <[u32]>::sort_specced ](slice: &mut [u32])
         old(slice).len() == slice.len(),
 ;
 
-spec fn lexhint(a: Seq<u32>, b: Seq<u32>, i: int);
+uninterp spec fn lexhint(a: Seq<u32>, b: Seq<u32>, i: int);
 
 spec fn lenlex_less(a: Seq<u32>, b: Seq<u32>) -> bool {
     a.len() < b.len() || (a.len() == b.len() && exists|i: int|
@@ -95,7 +86,6 @@ spec const BITS_SIZE: u64 = 1_000_000_000;
 exec fn next(bits: &mut [u32]) -> (output: bool)
     requires
         old(bits).len() < BITS_SIZE,
-        old(bits).len() >= 2,
     ensures
         is_permut_of(bits@, old(bits)@),
         output == false ==> bits == old(bits),
@@ -174,11 +164,7 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
                     }
                 };
             assert(is_permut(p, bits.len() as nat));
-        }
-        proof {
-            assert(is_permut_of(bits@, old(bits)@)) by {
-                transitive(bits@, obits, old(bits)@);
-            };
+            transitive(bits@, obits, old(bits)@);
         }
         i += 1;
         j -= 1;
@@ -192,7 +178,6 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
 exec fn permut(bits: &mut [u32]) -> Vec<Vec<u32>>
     requires
         old(bits).len() < BITS_SIZE,
-        old(bits).len() >= 2,
 {
     let mut result = Vec::new();
 
@@ -203,7 +188,6 @@ exec fn permut(bits: &mut [u32]) -> Vec<Vec<u32>>
     loop
         invariant
             bits.len() < BITS_SIZE,
-            bits.len() >= 2,
     {
         result.push(bits.to_vec());
         if (!next(bits)) {
