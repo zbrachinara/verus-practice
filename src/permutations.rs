@@ -91,11 +91,13 @@ pub assume_specification<T: Clone>[ <[T]>::to_vec ](slice: &[T]) -> (out: Vec<T>
 
 spec const BITS_SIZE: u64 = 1_000_000_000;
 
+
+
 exec fn next(bits: &mut [u32]) -> (output: bool)
     requires
         old(bits).len() < BITS_SIZE,old(bits).len()>=2
     ensures
-        old(bits).len() == bits.len()
+        old(bits).len() == bits.len(), is_permut_of(bits@,old(bits)@)
 {
     
     
@@ -113,6 +115,7 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
         
         i -= 1;
     }
+    assert(is_permut_of(bits@, old(bits)@));
     //assert(false);
     if (i <= 0) {
         return false;
@@ -128,25 +131,42 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     {
         j -= 1;
     }
-
+    assert(is_permut_of(bits@, old(bits)@));
     let temp = bits[i - 1];
     bits[i - 1] = bits[j];
     bits[j] = temp;
-
+    proof {
+        let p= |k| if k==i-1 {j as int} else {if k==j {i-1 as int} else {k}};
+        let evidence=permut_hint(p);
+    }
     // technically deviates from the problem since not mutating the original j, i, or temp anymore
     j = bits.len() - 1;
     while (i < j)
         invariant
             old(bits).len() == bits.len(),
             i - 1 <= j < bits.len(),
+            is_permut_of(bits@, old(bits)@)
     {
+        let ghost obits=bits@;
         let temp = bits[i];
         bits[i] = bits[j];
         bits[j] = temp;
+        
+        proof {
+            let p= |k| if k==i {j as int} else {if k==j {i as int} else {k}};
+            let evidence=permut_hint(p);
+        }
+        proof {
+            assert(is_permut_of(obits,old(bits)@));
+            assert(is_permut_of(bits@,obits));
+            assert(is_permut_of(bits@,old(bits)@)) by {
+                transitive(bits@,obits,old(bits)@);
+            };
+        }
+        assert(is_permut_of(bits@, old(bits)@));
         i += 1;
         j -= 1;
     }
-
     true
 }
 
