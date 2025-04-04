@@ -21,14 +21,9 @@ verus! {
 //     }
 //     result
 // }
-struct FinPermutation {
-    permutation: spec_fn(nat) -> nat,
-    up_to: nat,
-}
+uninterp spec fn permut_hint(f: spec_fn(int) -> int);
 
-spec fn permut_hint(f: spec_fn(int) -> int);
-
-spec fn inject_hint(f: spec_fn(int) -> int, i: int, j: int);
+uninterp spec fn inject_hint(f: spec_fn(int) -> int, i: int, j: int);
 
 spec fn is_permut(f: spec_fn(int) -> int, n: nat) -> bool {
     (forall|i| 0 <= i < n ==> (0 <= #[trigger] f(i) < n)) && (forall|i, j|
@@ -41,7 +36,11 @@ spec fn permut_witness<T>(a: Seq<T>, b: Seq<T>, f: spec_fn(int) -> int) -> bool 
 }
 
 spec fn is_permut_of<T>(a: Seq<T>, b: Seq<T>) -> bool {
-    exists|f| #![trigger permut_hint(f)] permut_witness(a, b, f)
+    exists|f|
+        #![trigger is_permut(f, a.len())]
+        #![trigger is_permut(f, b.len())]
+        #![trigger permut_hint(f)]
+        permut_witness(a, b, f)
 }
 
 proof fn transitive<T>(a: Seq<T>, b: Seq<T>, c: Seq<T>)
@@ -56,7 +55,6 @@ proof fn transitive<T>(a: Seq<T>, b: Seq<T>, c: Seq<T>)
     assert(is_permut(f, a.len()));
     let g = choose|g| permut_witness(b, c, g);
     let comp = |i| g(f(i));
-    let evidence = permut_hint(comp);
     assert(is_permut(comp, a.len())) by {
         assert forall|i, j|
             #![trigger comp(i),comp(j)]
@@ -70,9 +68,7 @@ proof fn reflexive<T>(a: Seq<T>)
     ensures
         is_permut_of(a, a),
 {
-    //let swap=|i| if i==0 {1} else {if i==1 {0} else {i}};
-    //let i=|x| swap(swap(x));
-    let evidence = permut_hint(|i| i);
+    assert(is_permut(|i| i, a.len()));
 }
 
 pub assume_specification[ <[u32]>::sort_specced ](slice: &mut [u32])
@@ -147,7 +143,7 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
                     k
                 }
             };
-        let evidence = permut_hint(p);
+        assert(is_permut(p, bits.len() as nat));
     }
     let ghost di = i - 1;
     j = bits.len() - 1;
@@ -177,7 +173,7 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
                         k
                     }
                 };
-            let evidence = permut_hint(p);
+            assert(is_permut(p, bits.len() as nat));
         }
         proof {
             assert(is_permut_of(bits@, old(bits)@)) by {
