@@ -69,6 +69,9 @@ spec fn prefixes_equal(a: Seq<u32>, b: Seq<u32>, prefix_length: int) -> bool {
     forall|ix| 0 <= ix < prefix_length ==> a[ix] == b[ix]
 }
 
+/// Compares two strings first by length, then by lexicographical order. One string is less than the
+/// other if one's length is less than the other, or failing that, if one string is less than the
+/// other lexicographically.
 spec fn lenlex_less(a: Seq<u32>, b: Seq<u32>) -> bool {
     a.len() < b.len() || (a.len() == b.len() && exists|i: int|
         0 <= i < a.len() && a[i] < b[i] && #[trigger] prefixes_equal(a, b, i))
@@ -81,6 +84,12 @@ pub assume_specification<T: Clone>[ <[T]>::to_vec ](slice: &[T]) -> (out: Vec<T>
 
 spec const BITS_SIZE: u64 = 1_000_000_000;
 
+/// `x` is a sequence which is lenlex between `a` and `b`
+spec fn lenlex_separated(a : Seq<u32>, b : Seq<u32>, x : Seq<u32>) -> bool {
+    lenlex_less(a, x) && lenlex_less(x, b)
+}
+
+// TODO prove termination by overflowing u32 (on lenlex strict increasing)
 exec fn next(bits: &mut [u32]) -> (output: bool)
     requires
         old(bits).len() < BITS_SIZE,
@@ -88,10 +97,11 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
         is_permut_of(bits@, old(bits)@),
         output == false ==> bits == old(bits),
         output == true ==> lenlex_less(old(bits)@, bits@),
+        !exists |x| is_permut_of(old(bits)@, x) && #[trigger] lenlex_separated(old(bits)@, bits@, x) 
 {
     assert(is_permut_of(bits@, old(bits)@)) by {
         reflexive(bits@);
-    };
+    }
     let mut i = (bits.len() as i64) - 1;
     while (i > 0 && bits[(i - 1) as usize] >= bits[i as usize])
         invariant
@@ -147,6 +157,16 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     assert(lenlex_less(old(bits)@, bits@)) by {
         let evidence = prefixes_equal(old(bits)@, bits@, di);
     }
+
+    assert(!exists |x| is_permut_of(old(bits)@, x) && lenlex_separated(old(bits)@, bits@, x)) by {
+        if (exists |x| is_permut_of(old(bits)@, x) && lenlex_separated(old(bits)@, bits@, x)) {
+            let x = choose |x| is_permut_of(old(bits)@, x) && lenlex_separated(old(bits)@, bits@, x);
+            
+            
+        }
+    }
+    
+
     true
 }
 
