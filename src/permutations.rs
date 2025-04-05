@@ -12,14 +12,13 @@ impl SpecSlice for [u32] {
 
 verus! {
 
-uninterp spec fn permut_hint(f: spec_fn(int) -> int);
+// uninterp spec fn permut_hint(f: spec_fn(int) -> int);
 
-uninterp spec fn inject_hint(f: spec_fn(int) -> int, i: int, j: int);
+// uninterp spec fn inject_hint(f: spec_fn(int) -> int, i: int, j: int);
 
 spec fn is_permut(f: spec_fn(int) -> int, n: nat) -> bool {
     (forall|i| 0 <= i < n ==> (0 <= #[trigger] f(i) < n)) && (forall|i, j|
-        #![trigger inject_hint(f,i,j)]
-        (0 <= i < n && 0 <= j < n) ==> ((f(i) == f(j))) ==> (i == j))
+        (0 <= i < n && 0 <= j < n) ==> ((#[trigger] f(i) == #[trigger] f(j))) ==> (i == j))
 }
 
 spec fn permut_witness<T>(a: Seq<T>, b: Seq<T>, f: spec_fn(int) -> int) -> bool {
@@ -28,8 +27,8 @@ spec fn permut_witness<T>(a: Seq<T>, b: Seq<T>, f: spec_fn(int) -> int) -> bool 
 
 spec fn is_permut_of<T>(a: Seq<T>, b: Seq<T>) -> bool {
     exists|f|
-        #![trigger is_permut(f, a.len()), is_permut(f, b.len())]
-        #![trigger permut_hint(f)]
+        #![trigger is_permut(f, a.len())]
+        // #![trigger permut_hint(f)]
         permut_witness(a, b, f)
 }
 
@@ -47,7 +46,7 @@ proof fn transitive<T>(a: Seq<T>, b: Seq<T>, c: Seq<T>)
         assert forall|i, j|
             #![trigger comp(i),comp(j)]
             (0 <= i < a.len() && 0 <= j < a.len()) ==> ((comp(i) == comp(j))) ==> (i == j) by {
-            let (e1, e2) = (inject_hint(f, i, j), inject_hint(g, f(i), f(j)));
+            // let (e1, e2) = (inject_hint(f, i, j), inject_hint(g, f(i), f(j)));
         }
     }
 }
