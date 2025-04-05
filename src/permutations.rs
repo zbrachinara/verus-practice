@@ -77,6 +77,14 @@ spec fn lenlex_less(a: Seq<u32>, b: Seq<u32>) -> bool {
         0 <= i < a.len() && a[i] < b[i] && #[trigger] prefixes_equal(a, b, i))
 }
 
+// spec fn monotonic_increasing(seq : Seq<u32>) -> bool {
+//     forall |x, y| 0 <= x < y < seq.len() ==> seq[x] <= seq[y]
+// }
+
+// spec fn monotonic_decreasing(seq : Seq<u32>) -> bool {
+//     forall |x, y| 0 <= x < y < seq.len() ==> seq[x] >= seq[y]
+// }
+
 pub assume_specification<T: Clone>[ <[T]>::to_vec ](slice: &[T]) -> (out: Vec<T>)
     ensures
         slice@ =~= out@,
@@ -107,6 +115,9 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
         invariant
             old(bits).len() == bits.len(),
             i < bits.len(),
+            // monotonic_decreasing(bits@.skip(i as int)),
+            // TODO not sure why above doesn't work compared to below
+            forall |x, y| i <= x < y < bits.len() ==> bits[x] >= bits[y],
     {
         i -= 1;
     }
@@ -121,13 +132,18 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
             old(bits).len() == bits.len(),
             bits[i - 1] < bits[i as int],
             0 < i <= j < bits.len(),
+            forall|x, y| i <= x < y < bits.len() ==> bits[x] >= bits[y],
+            forall|x| j < x < bits.len() ==> #[trigger] bits[x] <= bits[i - 1],
     {
         j -= 1;
     }
+
     let temp = bits[i - 1];
     bits[i - 1] = bits[j];
     bits[j] = temp;
+
     assert(is_permut_by(bits@, old(bits)@, swap_permutation(i - 1, j as int)));
+    assert(forall |x, y| i <= x < y < bits.len() ==> bits[x] >= bits[y]);
 
     let ghost di = i - 1;
     j = bits.len() - 1;
@@ -161,8 +177,16 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     assert(!exists |x| is_permut_of(old(bits)@, x) && lenlex_separated(old(bits)@, bits@, x)) by {
         if (exists |x| is_permut_of(old(bits)@, x) && lenlex_separated(old(bits)@, bits@, x)) {
             let x = choose |x| is_permut_of(old(bits)@, x) && lenlex_separated(old(bits)@, bits@, x);
+
+            assert(old(bits)[di] < bits[di]);
+            assert(old(bits)[di] <= x[di] <= bits[di]);
+
+            if (old(bits)[di] < x[di] < bits[di]) {
+                
+            }
+            assert(x[di] == old(bits)[di] || x[di] == bits[di]);
             
-            
+            assume(false)
         }
     }
     
