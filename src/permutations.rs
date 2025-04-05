@@ -21,15 +21,12 @@ spec fn is_permut(f: spec_fn(int) -> int, n: nat) -> bool {
         (0 <= i < n && 0 <= j < n) ==> ((#[trigger] f(i) == #[trigger] f(j))) ==> (i == j))
 }
 
-spec fn permut_witness<T>(a: Seq<T>, b: Seq<T>, f: spec_fn(int) -> int) -> bool {
+spec fn is_permut_by<T>(a: Seq<T>, b: Seq<T>, f: spec_fn(int) -> int) -> bool {
     a.len() == b.len() && is_permut(f, a.len()) && forall|i| 0 <= i < a.len() ==> a[i] == #[trigger] b[f(i)]
 }
 
 spec fn is_permut_of<T>(a: Seq<T>, b: Seq<T>) -> bool {
-    exists|f|
-        #![trigger is_permut(f, a.len())]
-        // #![trigger permut_hint(f)]
-        permut_witness(a, b, f)
+    exists|f| #![trigger is_permut(f, a.len())] is_permut_by(a, b, f)
 }
 
 proof fn transitive<T>(a: Seq<T>, b: Seq<T>, c: Seq<T>)
@@ -39,23 +36,17 @@ proof fn transitive<T>(a: Seq<T>, b: Seq<T>, c: Seq<T>)
     ensures
         is_permut_of(a, c),
 {
-    let f = choose|f| permut_witness(a, b, f);
-    let g = choose|g| permut_witness(b, c, g);
+    let f = choose|f| is_permut_by(a, b, f);
+    let g = choose|g| is_permut_by(b, c, g);
     let comp = |i| g(f(i));
-    assert(is_permut(comp, a.len())) by {
-        assert forall|i, j|
-            #![trigger comp(i),comp(j)]
-            (0 <= i < a.len() && 0 <= j < a.len()) ==> ((comp(i) == comp(j))) ==> (i == j) by {
-            // let (e1, e2) = (inject_hint(f, i, j), inject_hint(g, f(i), f(j)));
-        }
-    }
+    assert(is_permut_by(a, c, comp));
 }
 
 proof fn reflexive<T>(a: Seq<T>)
     ensures
         is_permut_of(a, a),
 {
-    assert(is_permut(|i| i, a.len()));
+    assert(is_permut_by(a, a, |x| x));
 }
 
 pub assume_specification[ <[u32]>::sort_specced ](slice: &mut [u32])
@@ -66,10 +57,13 @@ pub assume_specification[ <[u32]>::sort_specced ](slice: &mut [u32])
 
 uninterp spec fn lexhint(a: Seq<u32>, b: Seq<u32>, i: int);
 
+spec fn prefixes_equal(a : Seq<u32>, b : Seq<u32>, prefix_length : int) -> bool {
+    forall|ix| 0 <= ix < prefix_length ==> a[ix] == b[ix]
+}
+
 spec fn lenlex_less(a: Seq<u32>, b: Seq<u32>) -> bool {
     a.len() < b.len() || (a.len() == b.len() && exists|i: int|
-        #![trigger lexhint(a,b,i)]
-        0 <= i < a.len() && a[i] < b[i] && (forall|j: int| 0 <= j < i ==> a[j] == b[j]))
+        0 <= i < a.len() && a[i] < b[i] && #[trigger] prefixes_equal(a, b, i)) 
 }
 
 pub assume_specification<T: Clone>[ <[T]>::to_vec ](slice: &[T]) -> (out: Vec<T>)
@@ -126,7 +120,7 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
                     k
                 }
             };
-        assert(is_permut(p, bits.len() as nat));
+        assert(is_permut_by(bits@, old(bits)@, p));
     }
     let ghost di = i - 1;
     j = bits.len() - 1;
@@ -156,14 +150,14 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
                         k
                     }
                 };
-            assert(is_permut(p, bits.len() as nat));
+            assert(is_permut_by(bits@, obits, p));
             transitive(bits@, obits, old(bits)@);
         }
         i += 1;
         j -= 1;
     }
     assert(lenlex_less(old(bits)@, bits@)) by {
-        let evidence = lexhint(old(bits)@, bits@, di);
+        let evidence = prefixes_equal(old(bits)@, bits@, di);
     }
     true
 }
