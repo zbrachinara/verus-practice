@@ -23,13 +23,12 @@ spec fn is_permut(f: spec_fn(int) -> int, n: nat) -> bool {
 }
 
 spec fn permut_witness<T>(a: Seq<T>, b: Seq<T>, f: spec_fn(int) -> int) -> bool {
-    a.len() == b.len() && is_permut(f, a.len()) && forall|i| 0 <= i < a.len() ==> a[i] == b[f(i)]
+    a.len() == b.len() && is_permut(f, a.len()) && forall|i| 0 <= i < a.len() ==> a[i] == #[trigger] b[f(i)]
 }
 
 spec fn is_permut_of<T>(a: Seq<T>, b: Seq<T>) -> bool {
     exists|f|
-        #![trigger is_permut(f, a.len())]
-        #![trigger is_permut(f, b.len())]
+        #![trigger is_permut(f, a.len()), is_permut(f, b.len())]
         #![trigger permut_hint(f)]
         permut_witness(a, b, f)
 }
@@ -41,9 +40,7 @@ proof fn transitive<T>(a: Seq<T>, b: Seq<T>, c: Seq<T>)
     ensures
         is_permut_of(a, c),
 {
-    assert(a.len() == c.len());
     let f = choose|f| permut_witness(a, b, f);
-    assert(is_permut(f, a.len()));
     let g = choose|g| permut_witness(b, c, g);
     let comp = |i| g(f(i));
     assert(is_permut(comp, a.len())) by {
@@ -119,9 +116,6 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     let temp = bits[i - 1];
     bits[i - 1] = bits[j];
     bits[j] = temp;
-    assert(lenlex_less(old(bits)@, bits@)) by {
-        let evidence = lexhint(old(bits)@, bits@, i - 1);
-    }
     proof {
         let p = |k|
             if k == i - 1 {
