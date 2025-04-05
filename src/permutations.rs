@@ -156,6 +156,12 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
             0 <= di,
             forall|k| 0 <= k < di ==> old(bits)[k] == bits[k],
             i > di,
+            // These five together are used to prove tail order reversal
+            forall|x, y| i <= x < y <= j ==> bits[x] >= bits[y],
+            forall|x, y| di < x < i <= y < bits.len() ==> bits[x] <= bits[y],
+            forall|x, y| di < x <= j < y < bits.len() ==> bits[x] <= bits[y],
+            forall|x, y| di < x < y < i ==> bits[x] <= bits[y],
+            forall|x, y| j < x < y < bits.len() ==> bits[x] <= bits[y],
     {
         let ghost obits = bits@;
         let temp = bits[i];
@@ -173,6 +179,7 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     assert(lenlex_less(old(bits)@, bits@)) by {
         let evidence = prefixes_equal(old(bits)@, bits@, di);
     }
+    assert(forall |x, y| i <= x < y < bits.len() ==> bits[x] <= bits[y]);
 
     assert(!exists |x| is_permut_of(old(bits)@, x) && lenlex_separated(old(bits)@, bits@, x)) by {
         if (exists |x| is_permut_of(old(bits)@, x) && lenlex_separated(old(bits)@, bits@, x)) {
@@ -182,14 +189,13 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
             assert(old(bits)[di] <= x[di] <= bits[di]);
 
             if (old(bits)[di] < x[di] < bits[di]) {
-                
+                assume(false);               
             }
             assert(x[di] == old(bits)[di] || x[di] == bits[di]);
             
             assume(false)
         }
     }
-    
 
     true
 }
