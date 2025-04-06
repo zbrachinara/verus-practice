@@ -1,4 +1,5 @@
 use vstd::prelude::*;
+use vstd::pervasive::trigger;
 
 trait SpecSlice {
     fn sort_specced(&mut self);
@@ -26,6 +27,18 @@ spec fn is_permut_of<T>(a: Seq<T>, b: Seq<T>) -> bool {
     exists|f| #![trigger is_permut(f, a.len())] is_permut_by(a, b, f)
 }
 
+proof fn permut_surjective(f : spec_fn(int) -> int, bound : nat, point : int)
+    requires
+        is_permut(f, bound),
+        0 <= point < bound,
+    ensures
+        exists|x : int| #[trigger] f(x) == point 
+{
+    if (forall|x : int| #[trigger] f(x) != point) {
+        assume(false);
+    }
+}
+
 spec fn swap_permutation(i: int, j: int) -> spec_fn(int) -> int {
     |x|
         if (x == i) {
@@ -50,11 +63,42 @@ proof fn transitive<T>(a: Seq<T>, b: Seq<T>, c: Seq<T>)
     assert(is_permut_by(a, c, comp));
 }
 
+proof fn symmetric<T>(a : Seq<T>, b : Seq<T>) 
+    requires
+        is_permut_of(a, b)
+    ensures
+        is_permut_of(b, a)
+{
+    let f = choose |f| is_permut_by(a, b, f);
+
+    let f_inv = |y : int| choose |x| #[trigger] f(x) == y;
+
+    assume(false);
+}
+
 proof fn reflexive<T>(a: Seq<T>)
     ensures
         is_permut_of(a, a),
 {
     assert(is_permut_by(a, a, |x| x));
+}
+
+proof fn split_permutation<T>(from: Seq<T>, to : Seq<T>, split : int)
+    requires
+        is_permut_of(from, to)
+    ensures
+        is_permut_of(from.take(split), to.take(split)) <==> is_permut_of(from.skip(split), to.skip(split))
+{
+    if (is_permut_of(from.take(split), to.take(split))) {
+        let body_permut = choose |f| is_permut_by(from, to, f);
+        let head_permut = choose |f| is_permut_by(from.take(split), to.take(split), f);
+
+        assume(false);
+    }
+    if (is_permut_of(from.skip(split), to.skip(split))) {
+        // TODO phrase in terms of reverse
+        assume(false);
+    }
 }
 
 pub assume_specification[ <[u32]>::sort_specced ](slice: &mut [u32])
@@ -188,10 +232,8 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     }
     assert(monotonic_increasing(bits@.skip(i as int)));
 
-    assert(!exists |x| is_permut_of(old(bits)@, x) && lenlex_separated(old(bits)@, bits@, x)) by {
-        if (exists |x| is_permut_of(old(bits)@, x) && lenlex_separated(old(bits)@, bits@, x)) {
-            let x = choose |x| is_permut_of(old(bits)@, x) && lenlex_separated(old(bits)@, bits@, x);
-
+    assert forall|x| #![auto] is_permut_of(old(bits)@, x) implies !lenlex_separated(old(bits)@, bits@, x) by {
+        if (lenlex_separated(old(bits)@, bits@, x)) {
             assert(old(bits)[di] < bits[di]);
             assert(old(bits)[di] <= x[di] <= bits[di]);
 
@@ -200,7 +242,7 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
             }
             assert(x[di] == old(bits)[di] || x[di] == bits[di]);
             
-            assume(false)
+            assume(false);
         }
     }
 
