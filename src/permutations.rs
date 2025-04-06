@@ -77,13 +77,21 @@ spec fn lenlex_less(a: Seq<u32>, b: Seq<u32>) -> bool {
         0 <= i < a.len() && a[i] < b[i] && #[trigger] prefixes_equal(a, b, i))
 }
 
-// spec fn monotonic_increasing(seq : Seq<u32>) -> bool {
-//     forall |x, y| 0 <= x < y < seq.len() ==> seq[x] <= seq[y]
-// }
+spec fn monotonic_increasing(seq : Seq<u32>) -> bool {
+    forall |x, y| 0 <= x < y < seq.len() ==> seq[x] <= seq[y]
+}
 
-// spec fn monotonic_decreasing(seq : Seq<u32>) -> bool {
-//     forall |x, y| 0 <= x < y < seq.len() ==> seq[x] >= seq[y]
-// }
+spec fn monotonic_decreasing(seq : Seq<u32>) -> bool {
+    forall |x, y| 0 <= x < y < seq.len() ==> seq[x] >= seq[y]
+}
+
+spec fn tail_monotonic_increasing(seq : Seq<u32>, tail_start : int) -> bool {
+    forall|x, y| tail_start <= x < y < seq.len() ==> seq[x] <= seq[y] 
+}
+
+spec fn tail_monotonic_decreasing(seq : Seq<u32>, tail_start: int) -> bool {
+    forall|x, y| tail_start <= x < y < seq.len() ==> seq[x] >= seq[y] 
+}
 
 pub assume_specification<T: Clone>[ <[T]>::to_vec ](slice: &[T]) -> (out: Vec<T>)
     ensures
@@ -111,13 +119,12 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
         reflexive(bits@);
     }
     let mut i = (bits.len() as i64) - 1;
+
     while (i > 0 && bits[(i - 1) as usize] >= bits[i as usize])
         invariant
             old(bits).len() == bits.len(),
             i < bits.len(),
-            // monotonic_decreasing(bits@.skip(i as int)),
-            // TODO not sure why above doesn't work compared to below
-            forall |x, y| i <= x < y < bits.len() ==> bits[x] >= bits[y],
+            tail_monotonic_decreasing(bits@, i as int),
     {
         i -= 1;
     }
@@ -132,7 +139,7 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
             old(bits).len() == bits.len(),
             bits[i - 1] < bits[i as int],
             0 < i <= j < bits.len(),
-            forall|x, y| i <= x < y < bits.len() ==> bits[x] >= bits[y],
+            monotonic_decreasing(bits@.skip(i as int)),
             forall|x| j < x < bits.len() ==> #[trigger] bits[x] <= bits[i - 1],
     {
         j -= 1;
@@ -179,7 +186,7 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     assert(lenlex_less(old(bits)@, bits@)) by {
         let evidence = prefixes_equal(old(bits)@, bits@, di);
     }
-    assert(forall |x, y| i <= x < y < bits.len() ==> bits[x] <= bits[y]);
+    assert(monotonic_increasing(bits@.skip(i as int)));
 
     assert(!exists |x| is_permut_of(old(bits)@, x) && lenlex_separated(old(bits)@, bits@, x)) by {
         if (exists |x| is_permut_of(old(bits)@, x) && lenlex_separated(old(bits)@, bits@, x)) {
