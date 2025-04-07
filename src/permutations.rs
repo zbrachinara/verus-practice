@@ -1,5 +1,4 @@
 use vstd::prelude::*;
-use vstd::pervasive::trigger;
 
 trait SpecSlice {
     fn sort_specced(&mut self);
@@ -32,10 +31,23 @@ proof fn permut_surjective(f : spec_fn(int) -> int, bound : nat, point : int)
         is_permut(f, bound),
         0 <= point < bound,
     ensures
-        exists|x : int| #[trigger] f(x) == point 
+        exists|x : int| #[trigger] f(x) == point && 0 <= x < bound
+    decreases bound
 {
-    if (forall|x : int| #[trigger] f(x) != point) {
-        assume(false);
+    if (forall|x : int| #[trigger] f(x) != point || x < 0 || x >= bound) {
+        let f_minus_point = |x : int| {
+            if (f(x) < point) {
+                f(x)
+            } else {
+                f(x) - 1
+            }
+        };
+        // We have reduced the range of f, while keeping the domain
+        assert(forall|x| 0 <= x < bound ==> #[trigger] f_minus_point(x) != bound - 1);
+        // Even so, the modification results in a permutation.
+        assert(is_permut(f_minus_point, bound));
+        // Therefore, one element cannot map to anything in the range -- Contradiction .
+        permut_surjective(f_minus_point, (bound - 1) as nat, f_minus_point(bound - 1));
     }
 }
 
