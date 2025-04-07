@@ -26,22 +26,23 @@ spec fn is_permut_of<T>(a: Seq<T>, b: Seq<T>) -> bool {
     exists|f| #![trigger is_permut(f, a.len())] is_permut_by(a, b, f)
 }
 
-proof fn permut_surjective_at(f : spec_fn(int) -> int, bound : nat, point : int)
+proof fn permut_surjective_at(f: spec_fn(int) -> int, bound: nat, point: int)
     requires
         is_permut(f, bound),
         0 <= point < bound,
     ensures
-        exists|x : int| #[trigger] f(x) == point && 0 <= x < bound
-    decreases bound
+        exists|x: int| #[trigger] f(x) == point && 0 <= x < bound,
+    decreases bound,
 {
-    if (forall|x : int| #[trigger] f(x) != point || x < 0 || x >= bound) {
-        let f_minus_point = |x : int| {
-            if (f(x) < point) {
-                f(x)
-            } else {
-                f(x) - 1
-            }
-        };
+    if (forall|x: int| #[trigger] f(x) != point || x < 0 || x >= bound) {
+        let f_minus_point = |x: int|
+            {
+                if (f(x) < point) {
+                    f(x)
+                } else {
+                    f(x) - 1
+                }
+            };
         // We have reduced the range of f, while keeping the domain
         assert(forall|x| 0 <= x < bound ==> #[trigger] f_minus_point(x) != bound - 1);
         // Even so, the modification results in a permutation.
@@ -75,16 +76,17 @@ proof fn transitive<T>(a: Seq<T>, b: Seq<T>, c: Seq<T>)
     assert(is_permut_by(a, c, comp));
 }
 
-proof fn symmetric<T>(a : Seq<T>, b : Seq<T>) 
+proof fn symmetric<T>(a: Seq<T>, b: Seq<T>)
     requires
-        is_permut_of(a, b)
+        is_permut_of(a, b),
     ensures
-        is_permut_of(b, a)
+        is_permut_of(b, a),
 {
-    let f = choose |f| is_permut_by(a, b, f);
-    let f_inv = |y : int| choose |x| #[trigger] f(x) == y && 0 <= x < a.len();
+    let f = choose|f| is_permut_by(a, b, f);
+    let f_inv = |y: int| choose|x| #[trigger] f(x) == y && 0 <= x < a.len();
 
-    assert forall|i, j| 0 <= i < a.len() && 0 <= j < a.len() implies #[trigger] f_inv(i) == #[trigger] f_inv(j) ==> (i == j) by {
+    assert forall|i, j| 0 <= i < a.len() && 0 <= j < a.len() implies #[trigger] f_inv(i)
+        == #[trigger] f_inv(j) ==> (i == j) by {
         permut_surjective_at(f, a.len(), i);
         permut_surjective_at(f, a.len(), j);
     }
@@ -104,15 +106,18 @@ proof fn reflexive<T>(a: Seq<T>)
     assert(is_permut_by(a, a, |x| x));
 }
 
-proof fn split_permutation<T>(from: Seq<T>, to : Seq<T>, split : int)
+proof fn split_permutation<T>(from: Seq<T>, to: Seq<T>, split: int)
     requires
-        is_permut_of(from, to)
+        is_permut_of(from, to),
     ensures
-        is_permut_of(from.take(split), to.take(split)) <==> is_permut_of(from.skip(split), to.skip(split))
+        is_permut_of(from.take(split), to.take(split)) <==> is_permut_of(
+            from.skip(split),
+            to.skip(split),
+        ),
 {
     if (is_permut_of(from.take(split), to.take(split))) {
-        let body_permut = choose |f| is_permut_by(from, to, f);
-        let head_permut = choose |f| is_permut_by(from.take(split), to.take(split), f);
+        let body_permut = choose|f| is_permut_by(from, to, f);
+        let head_permut = choose|f| is_permut_by(from.take(split), to.take(split), f);
 
         assume(false);
     }
@@ -142,20 +147,20 @@ spec fn lenlex_less(a: Seq<u32>, b: Seq<u32>) -> bool {
         0 <= i < a.len() && a[i] < b[i] && #[trigger] prefixes_equal(a, b, i))
 }
 
-spec fn monotonic_increasing(seq : Seq<u32>) -> bool {
-    forall |x, y| 0 <= x < y < seq.len() ==> seq[x] <= seq[y]
+spec fn monotonic_increasing(seq: Seq<u32>) -> bool {
+    forall|x, y| 0 <= x < y < seq.len() ==> seq[x] <= seq[y]
 }
 
-spec fn monotonic_decreasing(seq : Seq<u32>) -> bool {
-    forall |x, y| 0 <= x < y < seq.len() ==> seq[x] >= seq[y]
+spec fn monotonic_decreasing(seq: Seq<u32>) -> bool {
+    forall|x, y| 0 <= x < y < seq.len() ==> seq[x] >= seq[y]
 }
 
-spec fn tail_monotonic_increasing(seq : Seq<u32>, tail_start : int) -> bool {
-    forall|x, y| tail_start <= x < y < seq.len() ==> seq[x] <= seq[y] 
+spec fn tail_monotonic_increasing(seq: Seq<u32>, tail_start: int) -> bool {
+    forall|x, y| tail_start <= x < y < seq.len() ==> seq[x] <= seq[y]
 }
 
-spec fn tail_monotonic_decreasing(seq : Seq<u32>, tail_start: int) -> bool {
-    forall|x, y| tail_start <= x < y < seq.len() ==> seq[x] >= seq[y] 
+spec fn tail_monotonic_decreasing(seq: Seq<u32>, tail_start: int) -> bool {
+    forall|x, y| tail_start <= x < y < seq.len() ==> seq[x] >= seq[y]
 }
 
 pub assume_specification<T: Clone>[ <[T]>::to_vec ](slice: &[T]) -> (out: Vec<T>)
@@ -166,7 +171,7 @@ pub assume_specification<T: Clone>[ <[T]>::to_vec ](slice: &[T]) -> (out: Vec<T>
 spec const BITS_SIZE: u64 = 1_000_000_000;
 
 /// `x` is a sequence which is lenlex between `a` and `b`
-spec fn lenlex_separated(a : Seq<u32>, b : Seq<u32>, x : Seq<u32>) -> bool {
+spec fn lenlex_separated(a: Seq<u32>, b: Seq<u32>, x: Seq<u32>) -> bool {
     lenlex_less(a, x) && lenlex_less(x, b)
 }
 
@@ -178,7 +183,7 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
         is_permut_of(bits@, old(bits)@),
         output == false ==> bits == old(bits),
         output == true ==> lenlex_less(old(bits)@, bits@),
-        !exists |x| is_permut_of(old(bits)@, x) && #[trigger] lenlex_separated(old(bits)@, bits@, x) 
+        !exists|x| is_permut_of(old(bits)@, x) && #[trigger] lenlex_separated(old(bits)@, bits@, x),
 {
     assert(is_permut_of(bits@, old(bits)@)) by {
         reflexive(bits@);
@@ -215,7 +220,7 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     bits[j] = temp;
 
     assert(is_permut_by(bits@, old(bits)@, swap_permutation(i - 1, j as int)));
-    assert(forall |x, y| i <= x < y < bits.len() ==> bits[x] >= bits[y]);
+    assert(forall|x, y| i <= x < y < bits.len() ==> bits[x] >= bits[y]);
 
     let ghost di = i - 1;
     j = bits.len() - 1;
@@ -253,16 +258,20 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     }
     assert(monotonic_increasing(bits@.skip(i as int)));
 
-    assert forall|x| #![auto] is_permut_of(old(bits)@, x) implies !lenlex_separated(old(bits)@, bits@, x) by {
+    assert forall|x| #![auto] is_permut_of(old(bits)@, x) implies !lenlex_separated(
+        old(bits)@,
+        bits@,
+        x,
+    ) by {
         if (lenlex_separated(old(bits)@, bits@, x)) {
             assert(old(bits)[di] < bits[di]);
             assert(old(bits)[di] <= x[di] <= bits[di]);
 
             if (old(bits)[di] < x[di] < bits[di]) {
-                assume(false);               
+                assume(false);
             }
             assert(x[di] == old(bits)[di] || x[di] == bits[di]);
-            
+
             assume(false);
         }
     }
