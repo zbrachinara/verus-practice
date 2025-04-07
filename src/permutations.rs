@@ -26,7 +26,7 @@ spec fn is_permut_of<T>(a: Seq<T>, b: Seq<T>) -> bool {
     exists|f| #![trigger is_permut(f, a.len())] is_permut_by(a, b, f)
 }
 
-proof fn permut_surjective(f : spec_fn(int) -> int, bound : nat, point : int)
+proof fn permut_surjective_at(f : spec_fn(int) -> int, bound : nat, point : int)
     requires
         is_permut(f, bound),
         0 <= point < bound,
@@ -47,7 +47,7 @@ proof fn permut_surjective(f : spec_fn(int) -> int, bound : nat, point : int)
         // Even so, the modification results in a permutation.
         assert(is_permut(f_minus_point, bound));
         // Therefore, one element cannot map to anything in the range -- Contradiction .
-        permut_surjective(f_minus_point, (bound - 1) as nat, f_minus_point(bound - 1));
+        permut_surjective_at(f_minus_point, (bound - 1) as nat, f_minus_point(bound - 1));
     }
 }
 
@@ -82,10 +82,19 @@ proof fn symmetric<T>(a : Seq<T>, b : Seq<T>)
         is_permut_of(b, a)
 {
     let f = choose |f| is_permut_by(a, b, f);
+    let f_inv = |y : int| choose |x| #[trigger] f(x) == y && 0 <= x < a.len();
 
-    let f_inv = |y : int| choose |x| #[trigger] f(x) == y;
-
-    assume(false);
+    assert forall|i, j| 0 <= i < a.len() && 0 <= j < a.len() implies #[trigger] f_inv(i) == #[trigger] f_inv(j) ==> (i == j) by {
+        permut_surjective_at(f, a.len(), i);
+        permut_surjective_at(f, a.len(), j);
+    }
+    assert forall|i| 0 <= i < a.len() implies (0 <= #[trigger] f_inv(i) < a.len()) by {
+        permut_surjective_at(f, a.len(), i);
+    }
+    assert forall|i| 0 <= i < a.len() implies b[i] == #[trigger] a[f_inv(i)] by {
+        permut_surjective_at(f, a.len(), i);
+    }
+    assert(is_permut_by(b, a, f_inv));
 }
 
 proof fn reflexive<T>(a: Seq<T>)
