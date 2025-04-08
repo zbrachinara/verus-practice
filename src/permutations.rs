@@ -26,6 +26,57 @@ spec fn is_permut_of<T>(a: Seq<T>, b: Seq<T>) -> bool {
     exists|f| #![trigger is_permut(f, a.len())] is_permut_by(a, b, f)
 }
 
+/// When the given function is a permutation of size n, the output function is the permutation of
+/// size `n - 1` with the point `point` in its domain removed. The corresponding `perm(point)` in
+/// the range is also correspondingly removed.
+spec fn permut_remove_point(perm : spec_fn(int) -> int, point : int) -> spec_fn(int) -> int {
+    let pcompressed = |x : int| if perm(x) < perm(point) {perm(x)} else {perm(x) - 1};
+    |x : int| if x < point {pcompressed(x)} else {pcompressed(x + 1)}
+}
+
+/// Define an object from a permutation recusively by removing points from the permutation until an
+/// empty permutation is reached. This can be thought of as recursing on the bound of the
+/// permutation, except you have control over why the bound reduces.
+spec fn rec_permute_by_remove<T>(
+    perm : spec_fn(int) -> int,
+    bound : nat,
+    zero : T,
+    rec : spec_fn(spec_fn(int) -> int, nat, T) -> (int, T)
+) -> T 
+    decreases bound
+{
+    if (bound == 0) {
+        zero
+    } else {
+        let (point_rem, t) = rec(perm, bound, zero);
+        let perm1 = permut_remove_point(perm, point_rem);
+        rec_permute_by_remove(perm1, (bound - 1) as nat, t, rec)
+    }
+}
+
+proof fn rec_permut_by_remove_correct<T>(
+    perm : spec_fn(int) -> int,
+    bound : nat,
+    t0 : T,
+    rec : spec_fn(spec_fn(int) -> int, nat, T) -> (int, T),
+    cond: spec_fn(T) -> bool,
+)
+    requires
+        is_permut(perm, bound),
+        forall|perm, bound, t| is_permut(perm, bound) ==> 0 <= (#[trigger] rec(perm, bound, t)).0 < bound,
+        forall|perm, bound, t| is_permut(perm, bound) ==> cond(t) ==> cond((#[trigger] rec(perm, bound, t)).1),
+        cond(t0)
+    ensures
+        cond(#[trigger] rec_permute_by_remove(perm, bound, t0, rec))
+    decreases bound
+{
+    if (bound > 0) {
+        let (point_rem, t) = rec(perm, bound, t0);
+        let perm1 = permut_remove_point(perm, point_rem);
+        rec_permut_by_remove_correct(perm1, (bound - 1) as nat, t, rec, cond);
+    }
+}
+
 proof fn permut_surjective_at(f: spec_fn(int) -> int, bound: nat, point: int)
     requires
         is_permut(f, bound),
