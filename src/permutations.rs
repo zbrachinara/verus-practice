@@ -396,9 +396,11 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     true
 }
 
-exec fn permut(bits: &mut [u32]) -> Vec<Vec<u32>>
+exec fn permut(bits: &mut [u32]) -> (result : Vec<Vec<u32>>)
     requires
         old(bits).len() < BITS_SIZE,
+    ensures
+        forall|x, y| 0 <= x < result.len() && 0 <= y < result.len() ==> result[x] != result[y]
 {
     let mut result = Vec::new();
 
