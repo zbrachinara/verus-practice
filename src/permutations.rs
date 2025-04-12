@@ -277,6 +277,8 @@ pub assume_specification[ <[u32]>::sort_specced ](slice: &mut [u32])
     ensures
         forall|i, j| 0 <= i <= j < slice.len() ==> slice[i] <= slice[j],
         old(slice).len() == slice.len(),
+        is_permut_of(slice@, old(slice)@),
+        monotonic_increasing(slice@),
 ;
 
 uninterp spec fn lexhint(a: Seq<u32>, b: Seq<u32>, i: int);
@@ -368,6 +370,7 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     ensures
         is_permut_of(bits@, old(bits)@),
         output == false ==> bits == old(bits),
+        output == false ==> monotonic_decreasing(bits@),
         output == true ==> lenlex_less(old(bits)@, bits@),
         !exists|x| is_permut_of(x,old(bits)@) && #[trigger] lenlex_separated(old(bits)@, bits@, x),
 {
@@ -524,36 +527,78 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     true
 }
 
+proof fn wo_aux(prop : spec_fn(nat) -> bool, x : nat)
+requires
+    prop(x)
+ensures
+    exists|x1| #[trigger] prop(x1) && forall |y: nat| y < x1 ==> !#[trigger] prop(y)
+decreases x
+{
+    if (exists |x1| #[trigger] prop(x1) && x1 < x) {
+        wo_aux(prop, choose|x1| #[trigger] prop(x1) && x1 < x);
+    } 
+}
+
+pub closed spec fn wo(prop : spec_fn(nat) -> bool) -> nat {
+    choose|x| #[trigger] prop(x) && forall |y: nat| y < x ==> !#[trigger] prop(y)
+}
+
+broadcast proof fn wo_proof(prop : spec_fn(nat) -> bool)
+requires
+    exists|x| #[trigger] prop(x)
+ensures
+    #![trigger wo(prop)] exists|x| #[trigger] prop(x) && forall |y: nat| y < x ==> !#[trigger] prop(y)
+{
+    wo_aux(prop, choose|x| #[trigger] prop(x));
+}
+
 exec fn permut(bits: &mut [u32]) -> (result : Vec<Vec<u32>>)
     requires
         old(bits).len() < BITS_SIZE,
     ensures
         forall|x, y| 0 <= x < y < result.len() ==> lenlex_less(result[x]@, result[y]@),
-        forall|x, y| 0 <= x < result.len() && 0 <= y < result.len() ==> (result[x] == result[y] <==> x == y)
+        forall|x, y| 0 <= x < result.len() && 0 <= y < result.len() ==> (result[x] == result[y] <==> x == y),
+        forall|ix| 0 <= ix < result.len() ==> #[trigger] is_permut_of(result[ix]@, old(bits)@),
+        forall|x| is_permut_of(x, old(bits)@) ==> exists|ix| 0 <= ix < result.len() && #[trigger] result[ix]@ =~= x
 {
     let mut result = Vec::<Vec<u32>>::new();
 
     // let Some(bits) = bits else {return result;};
 
     bits.sort_specced();
+    assert(monotonic_increasing(bits@));
 
     loop
         invariant_except_break
             bits.len() < BITS_SIZE,
             // result.len() > 0 ==> spec_next(result@.last()@) =~= bits@,
-            forall|x| 0 <= x < result.len() ==> lenlex_less(result[x]@, bits@),
+            forall|x| 0 <= x < result.len() ==> #[trigger] lenlex_less(result[x]@, bits@),
             forall|x, y| 0 <= x < y < result.len() ==> lenlex_less(result[x]@, result[y]@),
-            // forall |ix| 0 <= ix < result.len() ==> ! #[trigger] tail_monotonic_decreasing(result[ix]@, 0)
-            // result.len() > 0 ==> !tail_monotonic_decreasing(result@.last()@, 0),
-            // forall|ix| 0 <= ix < result.len() ==> lenlex_less(result[ix]@, result@.last()@)
+            
+            is_permut_of(bits@, old(bits)@),
+            forall|x| 0 <= x < result.len() ==> is_permut_of(result[x]@, old(bits)@),
+
+            result.len() == 0 ==> monotonic_increasing(bits@),
+            result.len() > 0 ==> monotonic_increasing(result@.first()@),
+
+            result.len() > 0 ==> forall|x| is_permut_of(x,old(bits)@) ==> ! #[trigger] lenlex_separated(result@.last()@, bits@, x),
+            forall|ix : int| #![trigger result[ix]] 0 < ix < result.len() ==>
+                !exists|x| is_permut_of(x,old(bits)@) && #[trigger] lenlex_separated(result[ix - 1]@, result[ix]@, x),
         ensures
             forall|x, y| 0 <= x < y < result.len() ==> lenlex_less(result[x]@, result[y]@),
+            result.len() > 0 && monotonic_decreasing(result@.last()@),
+            forall|x| 0 <= x < result.len() ==> #[trigger] is_permut_of(result[x]@, old(bits)@),
+            monotonic_increasing(result@.first()@),
+            forall|ix : int| #![trigger result[ix]] 0 < ix < result.len() ==>
+                !exists|x| is_permut_of(x,old(bits)@) && #[trigger] lenlex_separated(result[ix - 1]@, result[ix]@, x),
     {
         let ghost bits_pre_next = bits@;
+        let ghost result_pre_push = result@;
         // assert(result.len() > 0 ==> spec_next(result@.last()@) =~= bits@);
         result.push(bits.to_vec());
         assert(result@.last()@ == bits@);
 
+        assert(result_pre_push.len() > 0 ==> !exists|x| is_permut_of(x, old(bits)@) && lenlex_separated(result_pre_push.last()@, bits_pre_next, x));
         if (!next(bits)) {
             break;
         }
@@ -562,13 +607,56 @@ exec fn permut(bits: &mut [u32]) -> (result : Vec<Vec<u32>>)
         assert forall |x| 0 <= x < result.len() - 1 implies lenlex_less(result[x]@, bits@) by {
             lenlex_transitive(result[x]@, result@.last()@, bits@)
         }
+
+        proof {
+            transitive(bits@, bits_pre_next, old(bits)@);
+        }
+
+        assert(
+        forall|x| is_permut_of(x,bits_pre_next) ==> ! #[trigger] lenlex_separated(bits_pre_next, bits@, x)
+        );
+        assert forall|x| is_permut_of(x,old(bits)@) implies ! #[trigger] lenlex_separated(result@.last()@, bits@, x) by {
+            symmetric(bits_pre_next, old(bits)@);
+            transitive(x, old(bits)@, bits_pre_next);
+        }
+
+        assert(result.len() > 1 ==> !exists|x| is_permut_of(x, old(bits)@) && lenlex_separated(result[result.len() - 2]@, result[result.len() - 1]@, x));
     }
+
+    assert(result.len() > 0);
 
     assert forall|x, y| 0 <= x < result.len() && 0 <= y < result.len() implies (result[x] == result[y] <==> x == y) by {
         if (y < x) {
             assert(lenlex_less(result[y]@, result[x]@));
         } else if (x < y) {
             // TODO strange interaction??
+        }
+    }
+
+    assert forall|x| is_permut_of(x, old(bits)@) implies exists|ix| 0 <= ix < result.len() && #[trigger] result[ix]@ =~= x by {
+        monotonic_max(result@.last()@);
+        symmetric(result@.last()@, old(bits)@);
+        transitive(x, old(bits)@, result@.last()@);
+        // lenlex_transitive(a, b, c);
+        let prop = |ix : nat| !lenlex_less(result[ix as int]@, x);
+        assert(!lenlex_less(result@.last()@, x));
+        assert(prop((result.len() - 1) as nat));
+
+        broadcast use wo_proof;
+        let ix_x1 = wo(prop) as int;
+
+        assert(!lenlex_less(result[ix_x1]@, x));
+        assert(forall|y : nat| y < ix_x1 ==> !#[trigger] prop(y));
+
+        lenlex_trichotomy(result[ix_x1]@, x);
+        if (ix_x1 == 0) {
+            monotonic_min(result[0]@);
+            symmetric(result[0]@, old(bits)@);
+            transitive(x, old(bits)@, result[0]@);
+        } else {
+            assert(!prop((ix_x1 - 1) as nat));
+            assert(lenlex_less(result[(ix_x1 - 1)]@, x));
+            assert(!lenlex_separated(result[(ix_x1 - 1)]@, result[ix_x1]@, x));
         }
     }
 
