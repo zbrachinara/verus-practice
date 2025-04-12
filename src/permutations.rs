@@ -1,5 +1,3 @@
-use std::arch::x86_64;
-
 use vstd::prelude::*;
 
 trait SpecSlice {
@@ -135,7 +133,7 @@ proof fn prefix_match_lex(a:Seq<u32>,b:Seq<u32>,i:int) requires i>=0,prefixes_eq
         if (a.len()<b.len()) {
             assert(lenlex_less(a.skip(i), b.skip(i)));
         } else {
-            let j=choose|j| 0<=j<a.len()&&a[j]<b[j]&&prefixes_equal(a,b,j);
+            let j=choose|j| 0<=j<a.len()&&a[j]<b[j]&&#[trigger] prefixes_equal(a,b,j);
             assert(j>=i);
             assert(lenlex_less(ap,bp)) by {
                 assert(ap[j-i]<bp[j-i]);
@@ -148,7 +146,7 @@ proof fn prefix_match_lex(a:Seq<u32>,b:Seq<u32>,i:int) requires i>=0,prefixes_eq
         if (ap.len()<bp.len()) {
             assert(lenlex_less(a,b));
         } else {
-            let j=choose|j:int| 0<=j<ap.len()&&j<bp.len()&&ap[j]<bp[j]&&prefixes_equal(ap,bp,j);
+            let j=choose|j:int| 0<=j<ap.len()&&j<bp.len()&&ap[j]<bp[j]&& #[trigger] prefixes_equal(ap,bp,j);
             assert(lenlex_less(a,b)) by {
                 assert(a[j+i]<b[j+i]);
                 assert(forall|k|(i<=k<i+j)==>a[k]==ap[k-i]);
@@ -158,6 +156,48 @@ proof fn prefix_match_lex(a:Seq<u32>,b:Seq<u32>,i:int) requires i>=0,prefixes_eq
         
     }
 }
+
+proof fn monotonic_min(min : Seq<u32>) 
+requires
+    monotonic_increasing(min),
+ensures
+    forall|x| is_permut_of(x, min) ==> !lenlex_less(x, min)
+decreases min.len()
+{
+    if (min.len() == 0) {return;}
+    assert forall|x| is_permut_of(x, min) implies !lenlex_less(x, min) by {
+        let perm = choose |f| is_permut_by(x, min, f);
+        if (lenlex_less(x, min)) {
+            assert(x[0] == min[perm(0)]);
+            assert(min[0] == x[0]);
+
+            prefix_match_lex(x, min, 1);
+            monotonic_min(min.skip(1));
+            prefix_match_permut_tails(x, min, 1);
+        }
+    }
+}
+proof fn monotonic_max(max : Seq<u32>) 
+requires
+    monotonic_decreasing(max),
+ensures
+    forall|x| is_permut_of(x, max) ==> !lenlex_less(max, x)
+decreases max.len()
+{
+    if (max.len() == 0) {return;}
+    assert forall|x| is_permut_of(x, max) implies !lenlex_less(max, x) by {
+        let perm = choose |f| is_permut_by(x, max, f);
+        if (lenlex_less(max, x)) {
+            assert(x[0] == max[perm(0)]);
+            assert(max[0] == x[0]);
+
+            prefix_match_lex(max, x, 1);
+            monotonic_max(max.skip(1));
+            prefix_match_permut_tails(x, max, 1);
+        }
+    }
+}
+
 spec fn swap_permutation(i: int, j: int) -> spec_fn(int) -> int {
     |x|
         if (x == i) {
@@ -182,11 +222,11 @@ proof fn transitive<T>(a: Seq<T>, b: Seq<T>, c: Seq<T>)
     assert(is_permut_by(a, c, comp));
 }
 
-broadcast proof fn symmetric<T>(a: Seq<T>, b: Seq<T>)
+proof fn symmetric<T>(a: Seq<T>, b: Seq<T>)
     requires
         is_permut_of(a, b),
     ensures
-        #[trigger] is_permut_of(b, a),
+        is_permut_of(b, a),
 {
     let f = choose|f| is_permut_by(a, b, f);
     let f_inv = |y: int| choose|x| #[trigger] f(x) == y && 0 <= x < a.len();
@@ -253,38 +293,43 @@ spec fn lenlex_less(a: Seq<u32>, b: Seq<u32>) -> bool {
         0 <= i < a.len() && i<b.len()&&a[i] < b[i] && #[trigger] prefixes_equal(a, b, i))
 }
 
-proof fn lenlex_trichotomy(a : Seq<u32>, b : Seq<u32>)
-requires
-    !(a =~= b)
+proof fn lenlex_trichotomy(a : Seq<u32>, b : Seq<u32>) 
 ensures
-    lenlex_less(a, b) || lenlex_less(b, a)
+    a =~= b || lenlex_less(a, b) || lenlex_less(b, a)
 decreases a.len()
 {
-    if (a.len() == b.len() && !lenlex_less(a, b)) {
-        let neq_ix = choose|ix| 0 <= ix < a.len() && #[trigger] a[ix] != b[ix];
+    if !(a =~= b) && !lenlex_less(a, b) && a.len() == b.len() {
+        let neq_ix = choose |ix| 0 <= ix < a.len() && a[ix] != b[ix];
         if (a[neq_ix] > b[neq_ix] && prefixes_equal(b, a, neq_ix)) {
             return;
         }
         let a_head = a.take(neq_ix);
         let b_head = b.take(neq_ix);
 
-        assert(!prefixes_equal(a, b, neq_ix));
-        assert(forall|ix| #![auto] 0 <= ix < neq_ix ==> a[ix] == a_head[ix]);
-        assert(forall|ix| #![auto] 0 <= ix < neq_ix ==> b[ix] == b_head[ix]);
         lenlex_trichotomy(a_head, b_head);
-        assert(lenlex_less(a_head, b_head) || lenlex_less(b_head, a_head));
-
         if (lenlex_less(a_head, b_head)) {
-            let contra_ix = choose|ix| 0 <= ix < neq_ix && a_head[ix] < b_head[ix]
-                && #[trigger] prefixes_equal(a_head, b_head, ix);
+            let contra_ix = choose|ix| #![auto] 0 <= ix < neq_ix && a[ix] < b[ix] && prefixes_equal(a_head, b_head, ix);
+            assert(prefixes_equal(a, a_head, contra_ix));
             assert(prefixes_equal(a, b, contra_ix));
-        } else {
-            assert(lenlex_less(b_head, a_head));
-            let witness_ix = choose|ix| 0 <= ix < neq_ix && b_head[ix] < a_head[ix]
-                && #[trigger] prefixes_equal(b_head, a_head, ix);
+        } else if (lenlex_less(b_head, a_head)) {
+            let witness_ix = choose|ix| #![auto] 0 <= ix < neq_ix && b[ix] < a[ix] && prefixes_equal(b_head, a_head, ix);
+            assert(prefixes_equal(a, a_head, witness_ix));
             assert(prefixes_equal(b, a, witness_ix));
+        } else {
+            assert(prefixes_equal(a, a_head, neq_ix));
+            assert(prefixes_equal(a, b, neq_ix));
         }
     }
+}
+
+proof fn lenlex_transitive(a : Seq<u32>, b : Seq<u32>, c : Seq<u32>) 
+requires
+    lenlex_less(a, b),
+    lenlex_less(b, c),
+ensures
+    lenlex_less(a, c),
+{
+    lenlex_trichotomy(a, c);
 }
 
 spec fn monotonic_increasing(seq: Seq<u32>) -> bool {
@@ -315,17 +360,7 @@ spec fn lenlex_separated(a: Seq<u32>, b: Seq<u32>, x: Seq<u32>) -> bool {
     lenlex_less(a, x) && lenlex_less(x, b)
 }
 
-spec fn spec_next(bits : Seq<u32>) -> Seq<u32> {
-    if (tail_monotonic_decreasing(bits, 0)) {
-        bits
-    } else {
-        choose |x| 
-            is_permut_of(bits, x) &&
-            lenlex_less(bits, x) && 
-            !exists|y| is_permut_of(y,bits) && #[trigger] lenlex_separated(bits, x, y)
-    }
-}
-
+#[verifier::rlimit(infinity)]
 // TODO prove termination by overflowing u32 (on lenlex strict increasing)
 exec fn next(bits: &mut [u32]) -> (output: bool)
     requires
@@ -335,7 +370,6 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
         output == false ==> bits == old(bits),
         output == true ==> lenlex_less(old(bits)@, bits@),
         !exists|x| is_permut_of(x,old(bits)@) && #[trigger] lenlex_separated(old(bits)@, bits@, x),
-        spec_next(old(bits)@) =~= bits@
 {
     assert(is_permut_of(bits@, old(bits)@)) by {
         reflexive(bits@);
@@ -375,13 +409,14 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
     assert(forall|x, y| i <= x < y < bits.len() ==> bits[x] >= bits[y]);
 
     let ghost di = i - 1;
+    let ghost dj = j as int;
     j = bits.len() - 1;
     while (i < j)
         invariant
             old(bits).len() == bits.len(),
             i - 1 <= j < bits.len(),
             is_permut_of(bits@, old(bits)@),
-            old(bits)[di] < bits[di],
+            old(bits)[dj] == bits[di],
             0 <= di,
             forall|k| 0 <= k < di ==> old(bits)[k] == bits[k],
             i > di,
@@ -405,10 +440,28 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
         i += 1;
         j -= 1;
     }
+
     assert(lenlex_less(old(bits)@, bits@)) by {
         let evidence = prefixes_equal(old(bits)@, bits@, di);
     }
-    assert(monotonic_increasing(bits@.skip(i as int)));
+
+    proof {
+        prefix_match_permut_tails(bits@,old(bits)@,di);
+
+        assert(is_permut_of(bits@.skip(di),old(bits)@.skip(di)));
+        assert(forall |k| di <= k < bits.len() ==> old(bits)@[k] == old(bits)@.skip(di)[k - di]);
+        assert forall |k| #![trigger bits[k]] di <= k < bits.len() implies exists |h| di <= h < bits.len() && bits[k] == #[trigger] old(bits)[h] by {
+            let tail_permut = choose |f| is_permut_by(bits@.skip(di), old(bits)@.skip(di), f);
+            assert(bits[k] == old(bits)[tail_permut(k - di) + di]);
+        }
+        assert(forall|k| di <= k < bits.len() ==>
+            #[trigger] bits[k] >= bits[di] || bits[k] <= old(bits)[di as int]
+        );
+        // assert(
+        //     forall|k| di <= k < bits.len() ==> #[trigger]
+        //         bits[k] >= bits[di as int] ||
+        //         bits[k] <= bits[dj as int]);
+    }
 
     assert forall|x| is_permut_of(x,old(bits)@) implies ! #[trigger] lenlex_separated(
         old(bits)@,
@@ -422,40 +475,51 @@ exec fn next(bits: &mut [u32]) -> (output: bool)
             assert(prefixes_equal(x, bits@, di));
             assert(prefixes_equal(old(bits)@, bits@, di));
             
-            prefix_match_permut_tails(bits@,old(bits)@,di);
-            assert(is_permut_of(bits@.skip(di),old(bits)@.skip(di)));
             prefix_match_permut_tails(x, old(bits)@, di);
             assert(is_permut_of(x.skip(di),old(bits)@.skip(di)));
             prefix_match_lex(old(bits)@, x, di);
             prefix_match_lex(x, bits@, di);
             assert(lenlex_separated(old(bits)@.skip(di), bits@.skip(di), x.skip(di)));
             //assert(x[di]==old(bits)[di]||x[di]==bits[di]);
-            if (old(bits)[di] < x[di] < bits[di]) {
-                assume(false);
-            }
-            assert(x[di] == old(bits)[di] || x[di] == bits[di]);
+            // if (old(bits)[di] < x[di] < bits[di]) {
+            //     // let tail_permut = choose|x| 
+            //     assert(false);
+            // }
+            assert(x[di] == old(bits)[di] || x[di] == bits[di]) by {
+                let tail_permut = choose |f| is_permut_by(x.skip(di), old(bits)@.skip(di), f);
+                assert(x[di] == old(bits)[di + tail_permut(0)]);
+            };
 
-            assume(false);
-        }
-    }
-
-    proof {
-        broadcast use symmetric;
-        let ghost spec_bits = spec_next(old(bits)@);
-
-        if !(spec_bits =~= bits@) {
-            assert(is_permut_of(old(bits)@, spec_bits));
-            assert(lenlex_less(old(bits)@, spec_bits));
-            assert(!exists|y| is_permut_of(y,old(bits)@) && #[trigger] lenlex_separated(old(bits)@, spec_bits, y));
-
-            lenlex_trichotomy(spec_bits, bits@);
-            if (lenlex_less(spec_bits, bits@)) {
-                assert(lenlex_separated(old(bits)@, bits@, spec_bits));
+            if (x[di] == old(bits)[di]) {
+                prefix_match_permut_tails(x, old(bits)@, di + 1);
+                prefix_match_lex(old(bits)@, x, di + 1);
+                monotonic_max(old(bits)@.skip(di + 1));
             } else {
-                assert(lenlex_separated(old(bits)@, spec_bits, bits@));
+                symmetric(bits@, old(bits)@);
+                transitive(x, old(bits)@, bits@);
+                prefix_match_permut_tails(x, bits@, di + 1);
+                prefix_match_lex(x, bits@, di + 1);
+                monotonic_min(bits@.skip(di + 1));
             }
+
         }
     }
+
+    // proof {
+    //     // broadcast use symmetric;
+    //     let ghost spec_bits = spec_next(old(bits)@);
+
+    //     if !(spec_bits =~= bits@) {
+    //         assert(!tail_monotonic_decreasing(bits@, 0));
+    //         lenlex_trichotomy(spec_bits, bits@);
+    //         if (lenlex_less(spec_bits, bits@)) {
+    //             assert(lenlex_less(old(bits)@, spec_bits));
+    //             assert(lenlex_separated(old(bits)@, bits@, spec_bits));
+    //         } else {
+    //             assert(lenlex_separated(old(bits)@, spec_bits, bits@));
+    //         }
+    //     }
+    // }
 
     true
 }
@@ -464,21 +528,47 @@ exec fn permut(bits: &mut [u32]) -> (result : Vec<Vec<u32>>)
     requires
         old(bits).len() < BITS_SIZE,
     ensures
-        forall|x, y| 0 <= x < result.len() && 0 <= y < result.len() ==> result[x] != result[y]
+        forall|x, y| 0 <= x < y < result.len() ==> lenlex_less(result[x]@, result[y]@),
+        forall|x, y| 0 <= x < result.len() && 0 <= y < result.len() ==> (result[x] == result[y] <==> x == y)
 {
-    let mut result = Vec::new();
+    let mut result = Vec::<Vec<u32>>::new();
 
     // let Some(bits) = bits else {return result;};
 
     bits.sort_specced();
 
     loop
-        invariant
+        invariant_except_break
             bits.len() < BITS_SIZE,
+            // result.len() > 0 ==> spec_next(result@.last()@) =~= bits@,
+            forall|x| 0 <= x < result.len() ==> lenlex_less(result[x]@, bits@),
+            forall|x, y| 0 <= x < y < result.len() ==> lenlex_less(result[x]@, result[y]@),
+            // forall |ix| 0 <= ix < result.len() ==> ! #[trigger] tail_monotonic_decreasing(result[ix]@, 0)
+            // result.len() > 0 ==> !tail_monotonic_decreasing(result@.last()@, 0),
+            // forall|ix| 0 <= ix < result.len() ==> lenlex_less(result[ix]@, result@.last()@)
+        ensures
+            forall|x, y| 0 <= x < y < result.len() ==> lenlex_less(result[x]@, result[y]@),
     {
+        let ghost bits_pre_next = bits@;
+        // assert(result.len() > 0 ==> spec_next(result@.last()@) =~= bits@);
         result.push(bits.to_vec());
+        assert(result@.last()@ == bits@);
+
         if (!next(bits)) {
-            break ;
+            break;
+        }
+
+        assert(lenlex_less(bits_pre_next, bits@));
+        assert forall |x| 0 <= x < result.len() - 1 implies lenlex_less(result[x]@, bits@) by {
+            lenlex_transitive(result[x]@, result@.last()@, bits@)
+        }
+    }
+
+    assert forall|x, y| 0 <= x < result.len() && 0 <= y < result.len() implies (result[x] == result[y] <==> x == y) by {
+        if (y < x) {
+            assert(lenlex_less(result[y]@, result[x]@));
+        } else if (x < y) {
+            // TODO strange interaction??
         }
     }
 
