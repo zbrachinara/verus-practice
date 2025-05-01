@@ -57,9 +57,13 @@ tokenized_state_machine!{FifoQueue<T> {
         self.backing_cells.len()
     }
 
-    pub open spec fn inc_wrap(i: nat, len: nat) -> nat {
-        if i + 1 == len { 0 } else { i + 1 }
+    pub open spec fn eq_mod_len(&self, x : nat, y : nat) -> bool {
+        x % self.len() == y % self.len()
     }
+
+    // pub open spec fn inc_wrap(i: nat, len: nat) -> nat {
+    //     if i + 1 == len { 0 } else { i + 1 }
+    // }
 
     // Make sure the producer state and the consumer state aren't inconsistent.
 
@@ -67,17 +71,22 @@ tokenized_state_machine!{FifoQueue<T> {
     pub fn not_overlapping(&self) -> bool {
         match (self.producer, self.consumer) {
             (ProducerState::Producing(tail), ConsumerState::Idle(head)) => {
-                Self::inc_wrap(tail, self.len()) != head
+                // Self::inc_wrap(tail, self.len()) != head
+                // (tail + 1) % self.len() != head % self.len()
+                !self.eq_mod_len(tail + 1, head)
             }
             (ProducerState::Producing(tail), ConsumerState::Consuming(head)) => {
-                head != tail
-                && Self::inc_wrap(tail, self.len()) != head
+                head != tail &&
+                !self.eq_mod_len(tail + 1, head)
+                // (tail + 1) % self.len() != head % self.len()
+                // && Self::inc_wrap(tail, self.len()) != head
             }
             (ProducerState::Idle(tail), ConsumerState::Idle(head)) => {
                 true
             }
             (ProducerState::Idle(tail), ConsumerState::Consuming(head)) => {
-                head != tail
+                !self.eq_mod_len(tail, head)
+                // head != tail
             }
         }
     }
@@ -202,7 +211,8 @@ tokenized_state_machine!{FifoQueue<T> {
             assert(0 <= tail < pre.backing_cells.len());
 
             // Compute the incremented tail, wrapping around if necessary.
-            let next_tail = Self::inc_wrap(tail, pre.backing_cells.len());
+            // let next_tail = Self::inc_wrap(tail, pre.backing_cells.len());
+            let next_tail = tail + 1;
 
             // We have to check that the buffer isn't full to proceed.
             require(next_tail != head);
@@ -246,7 +256,8 @@ tokenized_state_machine!{FifoQueue<T> {
             assert(0 <= tail < pre.backing_cells.len());
 
             // Compute the incremented tail, wrapping around if necessary.
-            let next_tail = Self::inc_wrap(tail, pre.backing_cells.len());
+            // let next_tail = Self::inc_wrap(tail, pre.backing_cells.len());
+            let next_tail = tail + 1;
 
             // This time, we don't need to compare the `head` and `tail` - we already
             // check that, and anyway, we don't have access to the `head` field
@@ -312,7 +323,8 @@ tokenized_state_machine!{FifoQueue<T> {
             let head = _h;
 
             assert(0 <= head < pre.backing_cells.len());
-            let next_head = Self::inc_wrap(head, pre.backing_cells.len());
+            // let next_head = Self::inc_wrap(head, pre.backing_cells.len());
+            let next_head = head + 1;
 
             update consumer = ConsumerState::Idle(next_head);
             update head = next_head;
@@ -348,13 +360,15 @@ tokenized_state_machine!{FifoQueue<T> {
     fn produce_start_inductive(pre: Self, post: Self) {
         let tail = pre.producer->Idle_0;
         assert(!pre.in_active_range(tail));
+        assert(pre.head == post.head);
         match (post.producer, post.consumer) {
             (ProducerState::Producing(tail), ConsumerState::Idle(head)) => {
-                assert(Self::inc_wrap(tail, post.len()) != head);
+                assert(!pre.eq_mod_len(tail + 1, head));
             }
             (ProducerState::Producing(tail), ConsumerState::Consuming(head)) => {
                 assert(head != tail);
-                assert(Self::inc_wrap(tail, post.len()) != head);
+                assert(!pre.eq_mod_len(tail + 1, head));
+                // assert(Self::inc_wrap(tail, post.len()) != head);
             }
             (ProducerState::Idle(tail), ConsumerState::Idle(head)) => {
             }
@@ -681,7 +695,26 @@ impl<T> Consumer<T> {
     }
 }
 
-fn test_theorems() {
+fn test_single_item_invariant() {
+    let (mut producer, mut consumer) = new_queue(10);
+
+    vstd::thread::spawn(move || {
+        let mut producer = producer;
+        loop invariant producer.wf() {
+            producer.enqueue(1);
+        }
+    });
+
+    vstd::thread::spawn(move || {
+        let mut consumer = consumer;
+        loop invariant consumer.wf() {
+            let output = consumer.dequeue();
+            assert(output == 1);
+        }
+    });
+}
+
+fn main() {
     let (mut producer, mut consumer) = new_queue(20);
 
     // Simple test:
