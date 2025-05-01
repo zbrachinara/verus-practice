@@ -1,7 +1,6 @@
 use std::sync::Arc;
 use vstd::atomic_ghost::*;
-use vstd::cell::*;
-use vstd::cell;
+use vstd::cell::{self, *};
 use vstd::map::*;
 use vstd::prelude::*;
 use vstd::pervasive::*;
@@ -10,13 +9,11 @@ verus! {
 
 use state_machines_macros::tokenized_state_machine;
 
-#[is_variant]
 pub enum ProducerState {
     Idle(nat),  // local copy of tail
     Producing(nat),
 }
 
-#[is_variant]
 pub enum ConsumerState {
     Idle(nat),  // local copy of head
     Consuming(nat),
@@ -90,8 +87,8 @@ tokenized_state_machine!{FifoQueue<T> {
 
     #[invariant]
     pub fn in_bounds(&self) -> bool {
-        0 <= self.head && self.head < self.len() &&
-        0 <= self.tail && self.tail < self.len()
+        0 <= self.head < self.len() &&
+        0 <= self.tail < self.len()
         && match self.producer {
             ProducerState::Producing(tail) => {
                 self.tail == tail
@@ -115,9 +112,9 @@ tokenized_state_machine!{FifoQueue<T> {
 
     pub open spec fn in_active_range(&self, i: nat) -> bool {
         // Note that self.head = self.tail means empty range
-        0 <= i && i < self.len() && (
+        0 <= i < self.len() && (
             if self.head <= self.tail {
-                self.head <= i && i < self.tail
+                self.head <= i < self.tail
             } else {
                 i >= self.head || i < self.tail
             }
@@ -176,7 +173,7 @@ tokenized_state_machine!{FifoQueue<T> {
             // an empty cell.
 
             require(
-                (forall|i: nat| 0 <= i && i < backing_cells.len() ==>
+                (forall|i: nat| 0 <= i < backing_cells.len() ==>
                     #[trigger] storage.dom().contains(i)
                     && storage.index(i).id() === backing_cells.index(i as int)
                     && storage.index(i).is_uninit())
@@ -195,14 +192,14 @@ tokenized_state_machine!{FifoQueue<T> {
     transition!{
         produce_start() {
             // In order to begin, we have to be in ProducerState::Idle.
-            require(pre.producer.is_Idle());
+            require let ProducerState::Idle(_t) = pre.producer;
 
             // We'll be comparing the producer's _local_ copy of the tail
             // with the _shared_ version of the head.
-            let tail = pre.producer.get_Idle_0();
+            let tail = _t; // TODO wait for name shadowing in require let
             let head = pre.head;
 
-            assert(0 <= tail && tail < pre.backing_cells.len());
+            assert(0 <= tail < pre.backing_cells.len());
 
             // Compute the incremented tail, wrapping around if necessary.
             let next_tail = Self::inc_wrap(tail, pre.backing_cells.len());
@@ -243,10 +240,10 @@ tokenized_state_machine!{FifoQueue<T> {
         produce_end(perm: cell::PointsTo<T>) {
             // In order to complete the produce step,
             // we have to be in ProducerState::Producing.
-            require(pre.producer.is_Producing());
-            let tail = pre.producer.get_Producing_0();
+            require let ProducerState::Producing(_t) = pre.producer;
+            let tail = _t;
 
-            assert(0 <= tail && tail < pre.backing_cells.len());
+            assert(0 <= tail < pre.backing_cells.len());
 
             // Compute the incremented tail, wrapping around if necessary.
             let next_tail = Self::inc_wrap(tail, pre.backing_cells.len());
@@ -277,14 +274,14 @@ tokenized_state_machine!{FifoQueue<T> {
     transition!{
         consume_start() {
             // In order to begin, we have to be in ConsumerState::Idle.
-            require(pre.consumer.is_Idle());
+            require let ConsumerState::Idle(_h) = pre.consumer;
 
             // We'll be comparing the consumer's _local_ copy of the head
             // with the _shared_ version of the tail.
-            let head = pre.consumer.get_Idle_0();
+            let head = _h;
             let tail = pre.tail;
 
-            assert(0 <= head && head < pre.backing_cells.len());
+            assert(0 <= head < pre.backing_cells.len());
 
             // We have to check that the buffer isn't empty to proceed.
             require(head != tail);
@@ -311,10 +308,10 @@ tokenized_state_machine!{FifoQueue<T> {
 
     transition!{
         consume_end(perm: cell::PointsTo<T>) {
-            require(pre.consumer.is_Consuming());
-            let head = pre.consumer.get_Consuming_0();
+            require let ConsumerState::Consuming(_h) = pre.consumer;
+            let head = _h;
 
-            assert(0 <= head && head < pre.backing_cells.len());
+            assert(0 <= head < pre.backing_cells.len());
             let next_head = Self::inc_wrap(head, pre.backing_cells.len());
 
             update consumer = ConsumerState::Idle(next_head);
@@ -329,7 +326,7 @@ tokenized_state_machine!{FifoQueue<T> {
     #[inductive(initialize)]
     fn initialize_inductive(post: Self, backing_cells: Seq<CellId>, storage: Map<nat, cell::PointsTo<T>>) {
         assert forall|i: nat|
-            0 <= i && i < post.len() implies post.valid_storage_at_idx(i)
+            0 <= i < post.len() implies post.valid_storage_at_idx(i)
         by {
             assert(post.storage.dom().contains(i));
             /*
@@ -349,7 +346,7 @@ tokenized_state_machine!{FifoQueue<T> {
 
     #[inductive(produce_start)]
     fn produce_start_inductive(pre: Self, post: Self) {
-        let tail = pre.producer.get_Idle_0();
+        let tail = pre.producer->Idle_0;
         assert(!pre.in_active_range(tail));
         match (post.producer, post.consumer) {
             (ProducerState::Producing(tail), ConsumerState::Idle(head)) => {
@@ -400,7 +397,7 @@ tokenized_state_machine!{FifoQueue<T> {
 
     #[inductive(consume_end)]
     fn consume_end_inductive(pre: Self, post: Self, perm: cell::PointsTo<T>) {
-        let head = pre.consumer.get_Consuming_0();
+        let head = pre.consumer->Consuming_0;
         assert(post.storage.dom().contains(head));
         assert(
                 post.storage.index(head).id() ===
@@ -450,7 +447,7 @@ struct_with_invariants!{
         predicate {
             // The Cell IDs in the instance protocol match the cell IDs in the actual vector:
             &&& self.instance@.backing_cells().len() == self.buffer@.len()
-            &&& forall|i: int| 0 <= i && i < self.buffer@.len() as int ==>
+            &&& forall|i: int| 0 <= i < self.buffer@.len() as int ==>
                 self.instance@.backing_cells().index(i) ===
                     self.buffer@.index(i).id()
         }
@@ -515,7 +512,7 @@ pub fn new_queue<T>(len: usize) -> (pc: (Producer<T>, Consumer<T>))
                 #![trigger( perms.dom().contains(j) )]
                 #![trigger( backing_cells_vec@.index(j as int) )]
                 #![trigger( perms.index(j) )]
-                0 <= j && j < backing_cells_vec.len() as int ==> perms.dom().contains(j)
+                0 <= j < backing_cells_vec.len() as int ==> perms.dom().contains(j)
                     && backing_cells_vec@.index(j as int).id() === perms.index(j).id()
                     && perms.index(j).is_uninit(),
     {
@@ -579,7 +576,7 @@ impl<T> Producer<T> {
         {
             let queue = &*self.queue;
             let len = queue.buffer.len();
-            assert(0 <= self.tail && self.tail < len);
+            assert(0 <= self.tail < len);
             // Calculate the index of the slot right after `tail`, wrapping around
             // if necessary. If the enqueue is successful, then we will be updating
             // the `tail` to this value.
@@ -645,7 +642,7 @@ impl<T> Consumer<T> {
         {
             let queue = &*self.queue;
             let len = queue.buffer.len();
-            assert(0 <= self.head && self.head < len);
+            assert(0 <= self.head < len);
             let next_head = if self.head + 1 == len {
                 0
             } else {
@@ -684,7 +681,7 @@ impl<T> Consumer<T> {
     }
 }
 
-fn main() {
+fn test_theorems() {
     let (mut producer, mut consumer) = new_queue(20);
 
     // Simple test:
