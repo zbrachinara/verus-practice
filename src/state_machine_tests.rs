@@ -1,4 +1,3 @@
-
 use vstd::prelude::*;
 use state_machines_macros::tokenized_state_machine;
 
@@ -37,5 +36,6 @@ pub fn z() {
 pub fn y() {
     let tracked (Tracked(instance), Tracked(foo)) = Bar::Instance::initialize();
     assert(false); // This works
+
 }
 }
