@@ -32,8 +32,7 @@ tokenized_state_machine! { FifoQueue<T> {
             < self.head + self.backing.len()
     }
 
-    transition! {
-        begin_produce() {
+    transition! { begin_produce() {
             require !pre.producing_tail;
             require pre.tail + 1 < pre.head + pre.backing.len();
 
@@ -50,8 +49,12 @@ tokenized_state_machine! { FifoQueue<T> {
         }
     }
 
-    transition! {
-        end_produce(permission : PointsTo<T>) {
+    #[inductive(begin_produce)]
+    fn begin_produce_valid(pre : Self, post : Self) {
+
+    }
+
+    transition! { end_produce(permission : PointsTo<T>) {
             require pre.producing_tail;
 
             require permission.id() == pre.backing[(pre.tail % pre.backing.len()) as int];
@@ -66,26 +69,14 @@ tokenized_state_machine! { FifoQueue<T> {
         }
     }
 
-    transition! {
-        begin_consume() {
-
-        }
-    }
-
-    transition! {
-        end_consume() {
-
-        }
-    }
-
-    #[inductive(begin_produce)]
-    fn begin_produce_valid(pre : Self, post : Self) {
-
-    }
-
     #[inductive(end_produce)]
     fn end_produce_valid(pre : Self, post : Self, permission: PointsTo<T>) {
 
+    }
+
+    transition! { begin_consume() {
+
+        }
     }
 
     #[inductive(begin_consume)]
@@ -93,12 +84,15 @@ tokenized_state_machine! { FifoQueue<T> {
 
     }
 
+    transition! { end_consume() {
+
+        }
+    }
+
     #[inductive(end_consume)]
     fn end_consume_valid(pre : Self, post : Self) {
 
     }
-
-    
 }}
 }
 
