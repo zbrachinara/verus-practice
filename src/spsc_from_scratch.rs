@@ -24,12 +24,54 @@ tokenized_state_machine! { FifoQueue<T> {
         pub consuming_head : bool,
     }
 
-    /// `[head, tail)` must define a contiguous and nonoverlapping region in `backing` 
+    /// Underlying buffer's capacity
+    pub open spec fn capacity(self) -> nat {
+        self.backing.len()
+    }
+
+    /// `[head, tail)` must define a contiguous and nonoverlapping region in `backing`. In addition,
+    /// `head` must be exclusive from `tail` when `head` is being read out, and `tail` must be
+    /// exclusive from `head` when `tail` is being written. 
     #[invariant]
-    pub fn inbounds(self) -> bool {
-        &&& self.head <= self.tail
-        &&& if (self.producing_tail) { self.tail + 1 } else { self.tail }
-            < self.head + self.backing.len()
+    pub open spec fn head_tail_correct(self) -> bool {
+        &&& if (self.consuming_head) {
+            self.head < self.tail < self.head + self.capacity()
+        }  else {
+            self.head <= self.tail < self.head + self.capacity()
+        }
+        &&& if (self.producing_tail) {
+            self.head <= self.tail < self.head + self.capacity() - 1
+        } else {
+            self.head <= self.tail < self.head + self.capacity()
+        }
+    }
+
+    /// Whether or not the given index lies within the bounds `[head, tail)` (references an
+    /// uninitialized value).
+    pub open spec fn inbounds(self, index : nat) -> bool {
+        self.head <= index < self.tail
+    }
+
+    /// Whether an index is in the active range (references an actual place in the backing, not a
+    /// dead value and not a yet unused value).
+    pub open spec fn inrange(self, index : nat) -> bool {
+        self.head <= index < self.head + self.capacity()
+    }
+
+    /// Whether a location is currently checked out
+    pub open spec fn mutating_location(self, ix : nat) -> bool {
+        (ix == self.head && self.consuming_head) || (ix == self.tail && self.producing_tail)
+    }
+
+    /// Whether permission for a location is currently available
+    pub open spec fn permission_available_at(self, ix : nat) -> bool {
+        self.permissions.dom().contains(ix)
+    }
+
+    /// Any location not being modified has permissions available
+    #[invariant]
+    pub open spec fn permissions_available(self) -> bool {
+        forall|ix : nat| !self.mutating_location(ix) && self.inrange(ix) ==> self.permission_available_at(ix)
     }
 
     transition! { begin_produce() {
@@ -38,7 +80,7 @@ tokenized_state_machine! { FifoQueue<T> {
 
             update producing_tail = true;
             withdraw permissions -= [pre.tail => let tail_permission] by {
-                assume(false);
+                assert(!pre.mutating_location(pre.tail));
             };
 
             assert(tail_permission.id() === pre.backing[(pre.tail % pre.backing.len()) as int]) by {
@@ -51,7 +93,8 @@ tokenized_state_machine! { FifoQueue<T> {
 
     #[inductive(begin_produce)]
     fn begin_produce_valid(pre : Self, post : Self) {
-
+        assert(!post.permission_available_at(post.tail));
+        assert(forall|ix : nat| ix != post.tail ==> pre.mutating_location(ix) == post.mutating_location(ix));
     }
 
     transition! { end_produce(permission : PointsTo<T>) {
