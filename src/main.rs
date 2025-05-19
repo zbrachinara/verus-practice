@@ -6,6 +6,7 @@ mod prefix_sum;
 mod spsc;
 mod state_machine_tests;
 mod spsc_from_scratch;
+mod wo;
 
 verus! {
 
@@ -28,12 +29,12 @@ tokenized_state_machine! { FifoQueue<T> {
         pub history : Map<nat, T>,
         #[sharding(variable)]
         pub head : nat,
-        #[sharding(variable)]
-        pub tail : nat,
-        #[sharding(variable)]
-        pub producing_tail : bool,
+        #[sharding(storage_map)]
+        pub tails : Map<nat, nat>,
         #[sharding(variable)]
         pub consuming_head : bool,
+        #[sharding(variable)]
+        pub max_tail: nat
     }
 
     /// Underlying buffer's capacity
@@ -47,22 +48,34 @@ tokenized_state_machine! { FifoQueue<T> {
     #[invariant]
     pub open spec fn head_tail_correct(self) -> bool {
         &&& if (self.consuming_head) {
-            self.head < self.tail < self.head + self.capacity()
+            self.head < self.min_tail() < self.head + self.capacity()
         }  else {
-            self.head <= self.tail < self.head + self.capacity()
+            self.head <= self.min_tail() < self.head + self.capacity()
         }
-        &&& if (self.producing_tail) {
-            self.head <= self.tail < self.head + self.capacity() - 1
-        } else {
-            self.head <= self.tail < self.head + self.capacity()
-        }
+        &&& forall|a1| self.tails.contains_value(a1) ==> self.head <= a1 < self.head + self.capacity()
     }
 
-    /// Whether or not the given index lies within the bounds `[head, tail)` (references an
-    /// uninitialized value).
-    pub open spec fn inbounds(self, index : nat) -> bool {
-        self.head <= index < self.tail
+
+
+
+    pub open spec fn min_tail(self) -> nat {
+        self.tails.values().find_unique_minimal(|a: nat, b| a <= b)
     }
+
+    pub open spec fn max_tail(self) -> nat {
+        self.tails.values().find_unique_maximal(|a: nat, b| a <= b)
+    }
+
+    #[invariant]
+    pub open spec fn max_among_producers(self) -> bool {
+        self.max_tail == wo::wo(|ix: nat| self.inrange(ix) && self.permissions[ix].is_init())
+    }
+
+    // /// Whether or not the given index lies within the bounds `[head, tail)` (references an
+    // /// initialized value).
+    // pub open spec fn inbounds(self, index : nat) -> bool {
+    //     self.head <= index < self.tail
+    // }
 
     /// Whether an index is in the active range (references an actual place in the backing, not a
     /// dead value and not a yet unused value).
@@ -72,7 +85,7 @@ tokenized_state_machine! { FifoQueue<T> {
 
     /// Whether a location is currently checked out
     pub open spec fn mutating_location(self, ix : nat) -> bool {
-        (ix == self.head && self.consuming_head) || (ix == self.tail && self.producing_tail)
+        (ix == self.head && self.consuming_head) || (exists|a1| self.tails.contains_value(a1) ==> a1 == ix)
     }
 
     /// Whether permission for a location is currently available
@@ -83,10 +96,11 @@ tokenized_state_machine! { FifoQueue<T> {
     /// Any location not being modified has permissions available
     #[invariant]
     pub open spec fn permissions_available(self) -> bool {
-        forall|ix : nat| !self.mutating_location(ix) && self.inrange(ix) ==> self.permission_available_at(ix)
+        forall|ix : nat| !self.mutating_location(ix) && self.inrange(ix) ==> self.permission_available_at(ix) &&
+        forall|a1, a2| self.tails.contains_value(a1) && self.tails.contains_value(a2) ==> a1 != a2
     }
 
-    init! { initialize(backing : Seq<CellId>, permissions : Map<nat, PointsTo<T>>) {
+    init! { initialize(backing : Seq<CellId>, permissions : Map<nat, PointsTo<T>>, num_producers: nat) {
         require 0 < backing.len();
         require forall|ix| 0 <= ix < backing.len() ==> permissions.dom().contains(ix);
         require forall|ix| 0 <= ix < backing.len() ==>
@@ -96,69 +110,58 @@ tokenized_state_machine! { FifoQueue<T> {
         init permissions = permissions;
         init history = Map::empty();
         init head = 0;
-        init tail = 0;
-        init producing_tail = false;
+        init tails = Map::empty();
         init consuming_head = false;
+        init max_tail = 0;
     }}
 
     #[inductive(initialize)]
-    fn initial_state_valid(post : Self, backing : Seq<CellId>, permissions : Map<nat, PointsTo<T>>) {
+    fn initial_state_valid(post : Self, backing : Seq<CellId>, permissions : Map<nat, PointsTo<T>>, num_producers: nat) {
     }
 
-    transition! { begin_produce() {
-        require !pre.producing_tail;
-        require pre.tail < pre.head + pre.backing.len() - 1;
+    transition! { begin_produce(index: nat) {
+        require pre.max_tail < pre.head + pre.backing.len();
 
-        update producing_tail = true;
-        withdraw permissions -= [pre.tail => let tail_permission] by {
-            assert(!pre.mutating_location(pre.tail));
-        };
-
-        assert(tail_permission.id() === pre.backing[(pre.tail % pre.backing.len()) as int]) by {
-            assume(pre.backing.len() > 0);
+        deposit tails += [index => pre.max_tail] by {
             assume(false);
         };
-        assert(tail_permission.is_uninit()) by { assume(false) };
+        withdraw permissions -= [pre.max_tail => let permission] by {
+            assume(false);
+        };
+        update max_tail = pre.max_tail + 1;
     }}
 
     #[inductive(begin_produce)]
-    fn begin_produce_valid(pre : Self, post : Self) {
-        assert(!post.permission_available_at(post.tail));
-        assert(forall|ix : nat| ix != post.tail ==> pre.mutating_location(ix) == post.mutating_location(ix));
+    fn begin_produce_valid(pre : Self, post : Self, index: nat) {
+        // assert(!post.permission_available_at(post.tail));
+        // assert(forall|ix : nat| ix != post.tail ==> pre.mutating_location(ix) == post.mutating_location(ix));
     }
 
-    transition! { end_produce(permission : PointsTo<T>) {
-        require pre.producing_tail;
+    transition! { end_produce(permission : PointsTo<T>, index: nat) {
+        // require pre.producing_tail;
 
-        require permission.id() == pre.backing[(pre.tail % pre.backing.len()) as int];
-        require permission.is_init();
-
-        update producing_tail = false;
-        update tail = pre.tail + 1;
-
-        deposit permissions += [pre.tail => permission] by {
-            assume(false);
-        };
+        // require permission.id() == pre.backing[(pre.tail % pre.backing.len()) as int];
+        // require permission.is_init();
     }}
 
     #[inductive(end_produce)]
-    fn end_produce_valid(pre : Self, post : Self, permission: PointsTo<T>) {
+    fn end_produce_valid(pre : Self, post : Self, permission: PointsTo<T>, index: nat) {
         
     }
 
     transition! { begin_consume() {
-        require !pre.consuming_head;
-        require pre.head < pre.tail;
+        // require !pre.consuming_head;
+        // require pre.head < pre.tail;
 
-        update consuming_head = true;
-        withdraw permissions -= [pre.head => let head_permission] by {
-            assert(!pre.mutating_location(pre.head));
-        };
+        // update consuming_head = true;
+        // withdraw permissions -= [pre.head => let head_permission] by {
+        //     assert(!pre.mutating_location(pre.head));
+        // };
 
-        assert(head_permission.id() == pre.backing[(pre.head % pre.backing.len()) as int]) by {
-            assume(false);
-        };
-        assert(head_permission.is_init()) by { assume(false) };
+        // assert(head_permission.id() == pre.backing[(pre.head % pre.backing.len()) as int]) by {
+        //     assume(false);
+        // };
+        // assert(head_permission.is_init()) by { assume(false) };
     }}
 
     #[inductive(begin_consume)]
@@ -167,16 +170,16 @@ tokenized_state_machine! { FifoQueue<T> {
     }
 
     transition! { end_consume(permission : PointsTo<T>) {
-        require pre.consuming_head;
+        // require pre.consuming_head;
         
-        require permission.id() == pre.backing[(pre.head % pre.backing.len()) as int];
-        require permission.is_uninit();
+        // require permission.id() == pre.backing[(pre.head % pre.backing.len()) as int];
+        // require permission.is_uninit();
 
-        update consuming_head = false;
-        update head = pre.head + 1;
-        deposit permissions += [pre.head => permission] by {
-            assume(false);
-        };
+        // update consuming_head = false;
+        // update head = pre.head + 1;
+        // deposit permissions += [pre.head => permission] by {
+        //     assume(false);
+        // };
 
 
     }}

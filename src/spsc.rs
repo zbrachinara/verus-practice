@@ -4,6 +4,7 @@ use vstd::cell::{self, *};
 use vstd::map::*;
 use vstd::prelude::*;
 use vstd::pervasive::*;
+use vstd::arithmetic::div_mod::*;
 
 verus! {
 
@@ -96,9 +97,7 @@ tokenized_state_machine!{FifoQueue<T> {
 
     #[invariant]
     pub fn in_bounds(&self) -> bool {
-        0 <= self.head < self.len() &&
-        0 <= self.tail < self.len()
-        && match self.producer {
+        &&& match self.producer {
             ProducerState::Producing(tail) => {
                 self.tail == tail
             }
@@ -106,7 +105,7 @@ tokenized_state_machine!{FifoQueue<T> {
                 self.tail == tail
             }
         }
-        && match self.consumer {
+        &&& match self.consumer {
             ConsumerState::Consuming(head) => {
                 self.head == head
             }
@@ -121,13 +120,7 @@ tokenized_state_machine!{FifoQueue<T> {
 
     pub open spec fn in_active_range(&self, i: nat) -> bool {
         // Note that self.head = self.tail means empty range
-        0 <= i < self.len() && (
-            if self.head <= self.tail {
-                self.head <= i < self.tail
-            } else {
-                i >= self.head || i < self.tail
-            }
-        )
+        self.head <= i < self.tail
     }
 
     // Indicates whether we expect a cell to be checked out or not,
@@ -157,7 +150,7 @@ tokenized_state_machine!{FifoQueue<T> {
             self.storage.dom().contains(i)
 
             // Permission must be for the correct cell:
-            && self.storage.index(i).id() === self.backing_cells.index(i as int)
+            && self.storage.index(i).id() === self.backing_cells.index((i % self.backing_cells.len()) as int)
 
             && if self.in_active_range(i) {
                 // The cell is full
@@ -173,6 +166,16 @@ tokenized_state_machine!{FifoQueue<T> {
     pub fn valid_storage_all(&self) -> bool {
         forall|i: nat| 0 <= i && i < self.len() ==>
             self.valid_storage_at_idx(i)
+    }
+
+    #[invariant]
+    pub fn backing_cell_nonempty(&self) -> bool {
+        self.backing_cells.len() > 0
+    }
+
+    #[invariant]
+    pub fn head_leq_tail(&self) -> bool {
+        self.head <= self.tail
     }
 
     init!{
@@ -208,11 +211,9 @@ tokenized_state_machine!{FifoQueue<T> {
             let tail = _t; // TODO wait for name shadowing in require let
             let head = pre.head;
 
-            assert(0 <= tail < pre.backing_cells.len());
-
             // Compute the incremented tail, wrapping around if necessary.
             // let next_tail = Self::inc_wrap(tail, pre.backing_cells.len());
-            let next_tail = tail + 1;
+            let next_tail = (tail + 1);
 
             // We have to check that the buffer isn't full to proceed.
             require(next_tail != head);
@@ -223,7 +224,8 @@ tokenized_state_machine!{FifoQueue<T> {
             // Withdraw ("check out") the permission stored at index `tail`.
             // This creates a proof obligation for the transition system to prove that
             // there is actually a permission stored at this index.
-            withdraw storage -= [tail => let perm] by {
+            withdraw storage -= [(tail % pre.backing_cells.len()) => let perm] by {
+                lemma_mod_pos_bound(tail as int, pre.backing_cells.len() as int);
                 assert(pre.valid_storage_at_idx(tail));
             };
 
@@ -232,7 +234,7 @@ tokenized_state_machine!{FifoQueue<T> {
             //  (i) is for the cell at index `tail` (the IDs match)
             //  (ii) the permission indicates that the cell is empty
             assert(
-                perm.id() === pre.backing_cells.index(tail as int)
+                perm.id() === pre.backing_cells.index((tail % pre.backing_cells.len()) as int)
                 && perm.is_uninit()
             ) by {
                 assert(!pre.in_active_range(tail));
@@ -253,7 +255,6 @@ tokenized_state_machine!{FifoQueue<T> {
             require let ProducerState::Producing(_t) = pre.producer;
             let tail = _t;
 
-            assert(0 <= tail < pre.backing_cells.len());
 
             // Compute the incremented tail, wrapping around if necessary.
             // let next_tail = Self::inc_wrap(tail, pre.backing_cells.len());
@@ -278,7 +279,7 @@ tokenized_state_machine!{FifoQueue<T> {
             update tail = next_tail;
 
             // Check the permission back into the storage map.
-            deposit storage += [tail => perm] by { assert(pre.valid_storage_at_idx(tail)); };
+            deposit storage += [tail => perm] by { assert(pre.valid_storage_at_idx(tail % pre.backing_cells.len())); };
         }
     }
 
@@ -292,7 +293,6 @@ tokenized_state_machine!{FifoQueue<T> {
             let head = _h;
             let tail = pre.tail;
 
-            assert(0 <= head < pre.backing_cells.len());
 
             // We have to check that the buffer isn't empty to proceed.
             require(head != tail);
@@ -322,7 +322,6 @@ tokenized_state_machine!{FifoQueue<T> {
             require let ConsumerState::Consuming(_h) = pre.consumer;
             let head = _h;
 
-            assert(0 <= head < pre.backing_cells.len());
             // let next_head = Self::inc_wrap(head, pre.backing_cells.len());
             let next_head = head + 1;
 
