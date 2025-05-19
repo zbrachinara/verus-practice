@@ -89,14 +89,13 @@ tokenized_state_machine! { FifoQueue<T> {
         init consuming_head = false;
     }}
 
-
     #[inductive(initialize)]
     fn initial_state_valid(post : Self, backing : Seq<CellId>, permissions : Map<nat, PointsTo<T>>) {
     }
 
     transition! { begin_produce() {
         require !pre.producing_tail;
-        require pre.tail + 1 < pre.head + pre.backing.len();
+        require pre.tail < pre.head + pre.backing.len() - 1;
 
         update producing_tail = true;
         withdraw permissions -= [pre.tail => let tail_permission] by {
@@ -132,11 +131,22 @@ tokenized_state_machine! { FifoQueue<T> {
 
     #[inductive(end_produce)]
     fn end_produce_valid(pre : Self, post : Self, permission: PointsTo<T>) {
-
+        
     }
 
     transition! { begin_consume() {
+        require !pre.consuming_head;
+        require pre.head < pre.tail;
 
+        update consuming_head = true;
+        withdraw permissions -= [pre.head => let head_permission] by {
+            assert(!pre.mutating_location(pre.head));
+        };
+
+        assert(head_permission.id() == pre.backing[(pre.head % pre.backing.len()) as int]) by {
+            assume(false);
+        };
+        assert(head_permission.is_init()) by { assume(false) };
     }}
 
     #[inductive(begin_consume)]
@@ -144,12 +154,23 @@ tokenized_state_machine! { FifoQueue<T> {
 
     }
 
-    transition! { end_consume() {
+    transition! { end_consume(permission : PointsTo<T>) {
+        require pre.consuming_head;
+        
+        require permission.id() == pre.backing[(pre.head % pre.backing.len()) as int];
+        require permission.is_uninit();
+
+        update consuming_head = false;
+        update head = pre.head + 1;
+        deposit permissions += [pre.head => permission] by {
+            assume(false);
+        };
+
 
     }}
 
     #[inductive(end_consume)]
-    fn end_consume_valid(pre : Self, post : Self) {
+    fn end_consume_valid(pre : Self, post : Self, permission : PointsTo<T>) {
 
     }
 }}
