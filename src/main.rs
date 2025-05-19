@@ -46,29 +46,38 @@ tokenized_state_machine! { FifoQueue<T> {
     /// `head` must be exclusive from `tail` when `head` is being read out, and `tail` must be
     /// exclusive from `head` when `tail` is being written. 
     #[invariant]
-    pub open spec fn head_tail_correct(self) -> bool {
+    pub open spec fn head_correct(self) -> bool {
         &&& if (self.consuming_head) {
             self.head < self.min_tail() < self.head + self.capacity()
         }  else {
             self.head <= self.min_tail() < self.head + self.capacity()
         }
-        &&& forall|a1| self.tails.contains_value(a1) ==> self.head <= a1 < self.head + self.capacity()
     }
 
-
-
+    #[invariant]
+    pub open spec fn tail_correct(self) -> bool {
+        &&& self.head <= self.max_tail <= self.head + self.capacity()
+    }
 
     pub open spec fn min_tail(self) -> nat {
-        self.tails.values().find_unique_minimal(|a: nat, b| a <= b)
+        if (self.tails.len() == 0) {
+            self.max_tail
+        } else {
+            self.tails.values().find_unique_minimal(|a: nat, b| a <= b)
+        }
     }
 
     pub open spec fn max_tail(self) -> nat {
-        self.tails.values().find_unique_maximal(|a: nat, b| a <= b)
+        if(forall|ix: nat| self.inrange(ix) ==> self.permissions[ix].is_init() && self.permissions.contains_key(ix)) {
+            self.head + self.capacity()
+        } else {
+            wo::wo(|ix: nat| self.inrange(ix) && !self.permissions[ix].is_init())
+        }
     }
 
     #[invariant]
     pub open spec fn max_among_producers(self) -> bool {
-        self.max_tail == wo::wo(|ix: nat| self.inrange(ix) && self.permissions[ix].is_init())
+        self.max_tail == self.max_tail()
     }
 
     // /// Whether or not the given index lies within the bounds `[head, tail)` (references an
@@ -96,7 +105,11 @@ tokenized_state_machine! { FifoQueue<T> {
     /// Any location not being modified has permissions available
     #[invariant]
     pub open spec fn permissions_available(self) -> bool {
-        forall|ix : nat| !self.mutating_location(ix) && self.inrange(ix) ==> self.permission_available_at(ix) &&
+        forall|ix : nat| !self.mutating_location(ix) && self.inrange(ix) ==> self.permission_available_at(ix)
+    }
+
+    #[invariant]
+    pub open spec fn disjoint_producers(self) -> bool {
         forall|a1, a2| self.tails.contains_value(a1) && self.tails.contains_value(a2) ==> a1 != a2
     }
 
@@ -105,6 +118,7 @@ tokenized_state_machine! { FifoQueue<T> {
         require forall|ix| 0 <= ix < backing.len() ==> permissions.dom().contains(ix);
         require forall|ix| 0 <= ix < backing.len() ==>
             backing[ix as int] === permissions[ix].id();
+        require forall |ix| 0 <= ix < backing.len() ==> !permissions[ix].is_init();
 
         init backing = backing;
         init permissions = permissions;
@@ -117,6 +131,17 @@ tokenized_state_machine! { FifoQueue<T> {
 
     #[inductive(initialize)]
     fn initial_state_valid(post : Self, backing : Seq<CellId>, permissions : Map<nat, PointsTo<T>>, num_producers: nat) {
+        let cond = |ix: nat| post.inrange(ix) && !post.permissions[ix].is_init();
+        assert(post.inrange(0));
+        assert(!post.permissions[0].is_init());
+        assert(cond(0));
+        assert(!forall|ix: nat| post.inrange(ix) ==> post.permissions[ix].is_init() && post.permissions.contains_key(ix));
+        wo::wo_proof(cond);
+        let max = choose|x: nat| #[trigger] cond(x) && forall |y: nat| y < x ==> !#[trigger] cond(y);
+        assert(max <= 0);
+        assert(max == 0);
+        assert(max == wo::wo(|ix: nat| post.inrange(ix) && !post.permissions[ix].is_init()));
+        // assume(0 == wo::wo(|ix: nat| post.inrange(ix) && !post.permissions[ix].is_init()));
     }
 
     transition! { begin_produce(index: nat) {

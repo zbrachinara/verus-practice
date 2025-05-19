@@ -14,11 +14,11 @@ verus!(
         } 
     }
     
-    pub closed spec fn wo(prop : spec_fn(nat) -> bool) -> nat {
+    pub open spec fn wo(prop : spec_fn(nat) -> bool) -> nat {
         choose|x| #[trigger] prop(x) && forall |y: nat| y < x ==> !#[trigger] prop(y)
     }
     
-    broadcast proof fn wo_proof(prop : spec_fn(nat) -> bool)
+    pub proof fn wo_proof(prop : spec_fn(nat) -> bool)
     requires
         exists|x| #[trigger] prop(x)
     ensures
