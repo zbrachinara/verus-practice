@@ -206,14 +206,14 @@ impl <T> List<T> {
                     self.permissions().pptr.index(link_ix) == link_pptr_perm,
                     link_cell_perm.id() == link.id(),
 
-                    0 <= link_ix <= self.permissions().len(),
+                    0 <= link_ix < self.permissions().len(),
                 decreases self.permissions().len() - link_ix
                 {
                     let next_cell = link
                         .read(Tracked(link_cell_perm))
                         .borrow(Tracked(link_pptr_perm));
                     link = next_cell.next.as_ref().unwrap();
-                    
+
                     assert(self.permissions().contains(link_ix + 1));
                     proof {
                         link_ix = link_ix + 1;
@@ -222,7 +222,28 @@ impl <T> List<T> {
                     }
                 }
 
-                assume(false)
+                assert(link_ix == self.permissions().len() - 1);
+
+                let old_last_location = link.read(Tracked(link_cell_perm)).clone();
+                let tracked mut old_pptr_perm = self.pptr_perms.borrow_mut().tracked_pop();
+
+                let mut old_last_node= old_last_location.take(Tracked(&mut old_pptr_perm));
+                let new_last_node = Node {
+                    value: elem,
+                    next: None
+                };
+                let (new_last_pptr, Tracked(new_last_pptr_perm))= PPtr::new(new_last_node);
+                let (new_last_cell, Tracked(new_last_cell_perm)) = PCell::new(new_last_pptr);
+                old_last_node.next = Some(new_last_cell);
+                old_last_location.put(Tracked(&mut old_pptr_perm), old_last_node);
+
+                proof {
+                    self.pptr_perms.borrow_mut().tracked_push(old_pptr_perm);
+                    self.pptr_perms.borrow_mut().tracked_push(new_last_pptr_perm);
+                    self.cell_perms.borrow_mut().tracked_push(new_last_cell_perm);
+                }
+
+                assume(false);
             }
         }
     }
