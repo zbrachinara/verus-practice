@@ -191,7 +191,7 @@ impl <T> List<T> {
 
                 assume(self.cell_perms.len() > 0);
                 let tracked mut link_cell_perm = self.cell_perms.borrow_mut().tracked_borrow(link_ix);
-                
+
                 assume(false)
             }
         }
