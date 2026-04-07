@@ -188,6 +188,7 @@ impl <T> List<T> {
         match &self.first {
             None => self.push(elem),
             Some(link) => {
+                let ghost old_link = link;
                 let mut link = link;
 
                 let ghost mut link_ix : int = 0;
@@ -243,7 +244,9 @@ impl <T> List<T> {
                     self.cell_perms.borrow_mut().tracked_push(new_last_cell_perm);
                 }
 
-                assume(false);
+                assert forall|ix| self.permissions().contains(ix) && ix < self.permissions().len() implies #[trigger] self.permissions().contains(ix + 1) by {
+                    assume(false);
+                }
             }
         }
     }
