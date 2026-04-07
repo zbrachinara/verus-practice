@@ -3,7 +3,7 @@ use core::mem::MaybeUninit;
 use vstd::cell::pcell::{self, PCell};
 use vstd::cell::CellId;
 use vstd::pervasive::arbitrary;
-use vstd::prelude::*;
+use vstd::{invariant, prelude::*};
 use vstd::simple_pptr::{self as pptr, PPtr};
 
 verus! {
@@ -186,13 +186,25 @@ impl <T> List<T> {
         assume(false)
     }
 
-    pub fn of_vec(xs : Vec<T>) -> (out : Self )
+    pub fn of_vec(mut xs : Vec<T>) -> (out : Self )
     ensures
         out.wf(),
         xs@ == out@
     {
-        assume(false);
-        unreached()
+        let ghost old_xs = xs@;
+        let mut out = Self::new();
+        
+        while !xs.is_empty()
+        invariant
+            out.wf(),
+            old_xs == xs@ + out@,
+        decreases xs.len()
+        {
+            let e = xs.pop().unwrap();
+            out.push(e)
+        }
+
+        out
     }
 
     pub fn get(&self, i : usize) -> (out : &T)
