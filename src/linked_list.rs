@@ -9,7 +9,7 @@ verus! {
 
 struct Node<T> {
     value : T,
-    next : PCell<PPtr<Node<T>>>,
+    next : Option<PCell<PPtr<Node<T>>>>,
 }
 
 struct Permissions<T> {
@@ -25,7 +25,7 @@ impl <T> Permissions<T> {
         // Suppose that the pointer is null
         &&& this_cell_perm.value().addr() == 0 ==> {
             // Then there must be no allocations beyond this pointer.
-            self.pptr.len() == ix && self.cell.len() == ix + 1
+            self.pptr.len() == ix && self.cell.len() == ix
         }
         // Suppose instead that the pointer is nonnull
         &&& this_cell_perm.value().addr() != 0 ==> {
@@ -35,10 +35,13 @@ impl <T> Permissions<T> {
             &&& this_pptr_perm.pptr() == this_cell_perm.value()
             // The pointee must be initialized
             &&& this_pptr_perm.mem_contents() matches pptr::MemContents::Init(next_node)
-            // In fact, the next cell must also be initialized
-            &&& self.cell.index(ix + 1) matches Some(next_node_perm)
-            // And the pointee must be exactly the next cell
-            &&& next_node.next.id() == next_node_perm.id()
+            // In fact, suppose that there is a cell permission for the next index
+            &&& self.cell.index(ix + 1) matches Some(next_cell_perm) ==> {
+                // That permission must correspond to the one in the next field of the pointee
+                &&& next_node.next matches Some(next_node_alloc)
+                // So their unique IDs must be equal
+                &&& next_node_alloc.id() == next_cell_perm.id()
+            }
         }
     }
 
