@@ -23,32 +23,23 @@ impl <T> Permissions<T> {
     /// Conditions on which we rely when we own a link in the list
     spec fn contains(&self, ix : int) -> bool {
         let this_cell_perm = self.cell.index(ix);
+        let this_pptr_perm = self.pptr.index(ix);
 
         // We own the container of this pointer
-        &&& self.cell.len() >= ix
-        // Suppose that the pointer is null
-        &&& this_cell_perm.value().addr() == 0 ==> {
-            // Then there must be no allocations beyond this pointer.
-            self.pptr.len() == ix && self.cell.len() == ix
-        }
-        // Suppose instead that the pointer is nonnull
-        &&& this_cell_perm.value().addr() != 0 ==> {
-            let this_pptr_perm = self.pptr.index(ix);
-
-            &&& self.pptr.len() >= ix
-            // That pointer must be the same as the one in the cell
-            &&& this_pptr_perm.pptr() == this_cell_perm.value()
-            // The pointee must be initialized
-            &&& this_pptr_perm.mem_contents() matches pptr::MemContents::Init(next_node)
-            // In fact, suppose that there is a cell permission for the next index
-            &&& self.cell.len() > ix ==> {
-                let next_cell_perm = self.cell.index(ix + 1);
-
-                // That permission must correspond to the one in the next field of the pointee
-                &&& next_node.next matches Some(next_node_alloc)
-                // So their unique IDs must be equal
-                &&& next_node_alloc.id() == next_cell_perm.id()
-            }
+        &&& self.cell.len() > ix
+        // The pointer must be nonnull
+        &&& this_cell_perm.value().addr() != 0
+        // That pointer must be the same as the one in the cell
+        &&& self.pptr.len() > ix
+        &&& this_pptr_perm.pptr() == this_cell_perm.value()
+        // The pointee must be initialized
+        &&& this_pptr_perm.mem_contents() matches pptr::MemContents::Init(next_node)
+        // In fact, suppose that there is a cell permission for the next index
+        &&& self.cell.len() > ix + 1 ==> {
+            let next_cell_perm = self.cell.index(ix + 1);
+            // That permission must correspond to the one in the next field of the pointee
+            &&& next_node.next matches Some(next_node_alloc)
+            &&& next_node_alloc.id() == next_cell_perm.id()
         }
     }
 
@@ -195,8 +186,10 @@ impl <T> List<T> {
                 let ghost mut link_ix : int = 0;
 
                 assert(self.permissions().mirrors(link.id()));
+                assert(self.permissions().contains(0));
+                // assert()
 
-                assume(self.cell_perms.len() > 100);
+                assume(self.cell_perms.len() > 0);
                 let tracked mut link_cell_perm = self.cell_perms.borrow_mut().tracked_borrow(link_ix);
                 
                 assume(false)
