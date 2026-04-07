@@ -1,0 +1,197 @@
+==================================================================================================
+TYPE/MODE RULES: C ; m |ς- e : μ t
+Here, we rewrite the rules from definitions_utf8.txt using the abbreviation C = D ; H ; P ; Γ.
+This notation is more convenient for the proofs.
+
+(D ; H ; P ; Γ), i -> u = (D ; H ; P, i -> u ; Γ)
+(D ; H ; P ; Γ), x -> μ t = (D ; H ; P ; Γ, x -> μ t)
+
+D ; H ; P ; Γ = (D1 ; H1 ; P1 ; Γ1), (D2 ; H2 ; P2 ; Γ2) iff
+  D = D1 = D2 and H = H1 = H2 and P = P1, P2 and Γ = Γ1, Γ2.
+
+D ; H ; P ; Γ = (D1 ; H1 ; P1 ; Γ1) # (D2 ; H2 ; P2 ; Γ2) iff
+  D = D1 = D2 and H = H1 = H2 and P = P1 # P2 and Γ = Γ1 # Γ2.
+
+!(D ; H ; P ; Γ) = D ; H ; !P ; !Γ
+¡(D ; H ; P ; Γ) = D ; H ; ¡P ; ¡Γ
+
+linear(D ; H ; P ; Γ) = D ; H ; linear(P) ; linear(Γ)
+shared(D ; H ; P ; Γ) = D ; H ; shared(P) ; shared(Γ)
+spec(D ; H ; P ; Γ) = D ; H ; {} ; spec(Γ)
+nonlinear(D ; H ; P ; Γ) = D ; H ; shared(P) ; spec(Γ)
+
+Define function_body_context(O, L, C, Cb, u) to be:
+  C = D ; H ; P ; Γ
+  Cb = D ; H ; Pb ; Γb
+  function_body_context(O, L, P, Γ, Pb, Γb, u)
+
+(D ; H ; P ; Γ) |- t iff D |- t
+(D ; H ; P ; Γ) ; m |- t : Copy iff D ; m |- t : Copy
+
+spec(C) = spec(C')
+mode_of(μ) = mode_of(μ')
+C' ; m |lax- e : μ' t
+------------------------ (laxity typing rule)
+C ; m |lax- e : μ t
+
+m ⊑ mode_of(μx)
+--------------------------------
+!C, x -> μx tx ; m |ς- x : μx tx
+
+!C, x -> mx shared tx ; m |ς- x : spec tx
+
+!C ; m |ς- i : μ int
+
+C1 ; m |ς- e1 : μ int
+C2 ; m |ς- e2 : μ int
+-------------------------------
+C1 # C2 ; m |ς- e1 + e2 : μ int
+
+!C ; m |ς- () : μ Unit
+
+!C ; m |ς- ⟂ : spec Never
+
+!C |- t
+------------------------------
+!C ; m |ς- default(t) : spec t
+
+C ; m |ς- e : μ Never
+μ != spec
+---------------------------------
+C ; m |ς- crash_never(e) : μ Unit
+
+!C ; exec |ς- hdata() : spec H
+
+!C ; exec |ς- hread() : exec linear H
+
+C ; exec |ς- e : exec linear H
+-------------------------------
+C ; exec |ς- hwrite(e) : μ Unit
+
+!C ; m |ς- v : exec linear t
+C ; exec |- t : Copy
+------------------------------------------------------------------
+!C, i -> u ; m |ς- permission(i -> v) : proof u permission(i -> t)
+
+// Dummy rule: no pread/pwrite operations on spec permission(i -> t) type, so we omit i -> u
+!C ; m |ς- v : μ t
+-------------------------------------------------------
+!C ; m |ς- permission(i -> v) : spec permission(i -> t)
+
+C ; m |ς- e : spec permission(i -> t)
+-------------------------------------
+C ; m |ς- pdata(e) : spec t
+
+C ; exec |ς- e_perm : proof shared permission(i -> t)
+-----------------------------------------------------
+C ; exec |ς- pread(i @ e_perm) : exec shared t
+
+C2 ; exec |ς- e_perm : proof linear permission(i -> t)
+C1 ; exec |ς- e_val : exec linear t'
+C1 ; exec |- t' : Copy
+---------------------------------------------------------------------------------
+C1 # C2 ; exec |ς- pwrite(i := e_val @ e_perm) : proof linear permission(i -> t')
+
+// Note: for simplicity, we prohibit dropping permissions (we're linear, not affine)
+C ; m |ς- e : me linear t
+C ; me |- t : Copy
+----------------------------------
+C ; m |ς- drop(e) : me shared Unit
+
+C ; m |ς- e : me shared t
+C ; me |- t : Copy
+-------------------------------
+C ; m |ς- copy(e) : me linear t
+
+C1, shared(Cb) ; m |ς- e1: μ1 Unit
+C2, linear(Cb) ; m |ς- e2: μ2 t2
+--------------------------------------------
+(C1 # C2), linear(Cb) ; m |ς- e1; e2 : μ2 t2
+
+C1, shared(Cb) ; m |ς- e1: μ1 t1
+C2, linear(Cb), x -> μ1 t1 ; m |ς- e2: μ2 t2
+is_unrestricted(μ1, t1) OR (Cb = D ; H ; {} ; {})
+mode_of(μ2) |- t2 : static
+m1 = mode_of(μ1)
+m ⊑ m1
+---------------------------------------------------------
+(C1 # C2), linear(Cb) ; m |ς- let m1 x = e1 in e2 : μ2 t2
+
+!C |- t
+--------------------------------
+!C ; m |ς- None(t) : μ Option(t)
+
+C ; m |ς- e : μ t
+----------------------------------
+C ; m |ς- Some(e: t) : μ Option(t)
+
+C1 ; m |ς- e1 : μ1 Option(t1)
+Cb, x -> μ1 t1 ; mb |ς- e2 : μb tb
+Cb ; mb |ς- e3 : μb tb
+m ⊑ mb
+mode_of(μ1) ⊑ mb OR (mode_of(μ1) = spec AND mb = proof)
+-----------------------------------------------------------
+C1 # Cb ; m |ς- if let Some(x) = e1 then e2 else e3 : μb tb
+
+C1 # ... # Cn = ..., S -> (m1 t1, ..., mn tn), ... ; ... ; ... ; ...
+C1 ; m |ς- e1 : (m1 ⊔ μ) t1
+...
+Cn ; m |ς- en : (mn ⊔ μ) tn
+------------------------------------------
+C1 # ... # Cn ; m |ς- S(e1, ..., en) : μ S
+
+C0 # Cb = ..., S -> (m1 t1, ..., mn tn), ...; ... ; ...
+C0 ; m |ς- e0 : μ0 S
+Cb, x1: (m1 ⊔ μ0) t1, ..., xn: (mn ⊔ μ0) tn ; m |ς- eb: μb tb
+mode_of(μb) |- tb : static
+-------------------------------------------------------------
+C0 # Cb ; m |ς- let S(x1, ..., xn) = e0 in eb : μb tb
+
+Cb, x -> μx tx ; mf |ς- eb : μb tb
+D |- tx
+function_body_context(O, L, C, Cb, u)
+non_spec_function_modes(mf, μx, μb, tb)
+---------------------------------------------------------------------
+C ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+
+// Dummy rule note: no spec operations on Fn[exec O L], Fn[proof O L] types, so we can relax linearity
+!C, x -> μx tx ; mf |lax- eb : μb tb
+!C |- tx
+non_spec_function_modes(mf, μx, μb, tb)
+----------------------------------------------------------------------
+!C ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+
+// Dummy rule note: no calls to shared Fn[mf Once L] functions, so we can relax linearity
+!C, x -> μx tx ; mf |lax- eb : μb tb
+!C |- tx
+non_spec_function_modes(mf, μx, μb, tb)
+---------------------------------------------------------------------------------
+!C ; m |ς- (λ[mf Once L] x: μx tx. eb) : mf shared (Fn[mf Once L] μx tx -> μb tb)
+
+!Cb, x -> spec tx ; spec |ς- eb : spec tb
+!C |- tx
+function_body_context(Many, static, !C, !Cb, shared)
+------------------------------------------------------------------------------------------------
+!C ; m |ς- (λ[spec Many static] x: spec tx. eb) : spec (Fn[spec Many static] spec tx -> spec tb)
+
+IF O = Once THEN is_linear(μ1)
+C1 ; m |ς- ef : μ1 (Fn[mf O L] μa ta -> μb tb)
+C2 ; m |ς- ea : μa ta
+mode_of(μ1) ⊑ mf
+m ⊑ mf
+----------------------------------------------
+C1 # C2 ; m |ς- ef ea : μb tb
+
+==================================================================================================
+
+WELL-TYPED STATE: C ; m |- (h, e) : μ t
+
+C = D ; H ; P ; Γ
+C ; m |strict- e : μ t
+D ; H ; {} ; spec(Γ) ; exec |strict- h : exec linear H
+D ; exec |- H : Copy
+|- H : static
+------------------------------------------------------
+C ; m |- (h, e) : μ t
+
+==================================================================================================

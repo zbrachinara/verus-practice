@@ -1,0 +1,1022 @@
+To prove termination, we translate Verus expressions and types into CIC terms.
+We use the definition of CIC provided at https://coq.github.io/doc/v8.9/refman/language/cic.html .
+We do not rely on all of CIC's features, but instead use just the following subset of CIC syntax:
+
+constructor names c
+terms T
+inductive definitions I for simple recursive record types
+inductive definitions for unit and option (written below)
+
+T = x | ∀x: Tx. Tb | λx: Tx. Tb | T1 T2 | let x := T1 in T2
+  | match T0 with (c x1 ... xn) => Tb | match T0 with None => T1 | Some x => T2
+I = Ind x: Set := c: T1 -> ... -> Tn -> x
+
+We write T1 -> T2 for ∀_: T1. T2.
+
+We assume an inductive definition for unit and option:
+Ind unit: Set := (): unit
+Ind option (A: Set): Set := None: ∀A: Set, Option A | Some: ∀A: Set, A -> Option A
+
+We define the following translation X(t) of from types t into terms T:
+
+X(int) = unit
+X(Unit) = unit
+X(Never) = unit
+X(permission(i -> t)) = X(t)
+X(Option(t)) = option X(t)
+X(S) = S
+X(Fn[spec O L] μ1 t1 -> μ2 t2) = X(t1) -> X(t2)
+X(Fn[proof O L] μ1 t1 -> μ2 t2) = X(t1) -> X(t2)
+X(Fn[exec O L] μ1 t1 -> μ2 t2) = unit
+
+We define the following translation X(d) of from declarations d into inductive definitions I:
+
+X(S -> (m1 t1, ..., mn tn)) = Ind S: Set := _S: X(t1) -> ... -> X(tn) -> S
+(note: here we use "S" as "x", the type name, and _S as "c", the constructor name)
+
+We define X(D) where D = d1 ... dn to be X(d1) ... X(dn).
+
+We define X(Γ) where Γ = x1 -> μ1 t1, ..., xn -> μn tn to be x1: X(t1), ..., xn: X(tn).
+Note: CIC distinguishes between a binding x: T and a binding x := T' : T.
+We will ignore the ":= T'" in the x := T' : T binding and treat it simply as x: T.
+Observation: if Γ = Γ1 # Γ2, then X(Γ) = X(Γ1) = X(Γ2).
+
+We define X(C) where C = D ; H ; P ; Γ to be definitions X(D) with context X(Γ).
+We write WF(X(C)) to mean that X(C) is well formed according to CIC's WF definition.
+
+We define a default value translation D |- t default_cic T as follows:
+
+D |- int default_cic ()
+
+D |- Unit default_cic ()
+
+D |- Never default_cic ()
+
+D |- t default_cic T
+-------------------------------------
+D |- permission(i -> t) default_cic T
+
+D |- Option(t) default_cic None X(t)
+
+D = ..., S -> (m1 t1, ..., mn tn), ...
+D |- t1 default_cic T1
+...
+D |- tn default_cic Tn
+------------------------------
+D |- S default_cic S T1 ... Tn
+
+m ∈ {spec, proof}
+D |- t2 default_cic T2
+-------------------------------------------------------
+D |- Fn[m O L] μ1 t1 -> μ2 t2 default_cic λx: X(t1). T2
+
+D |- Fn[exec O L] μ1 t1 -> μ2 t2 default_cic ()
+
+We define the translation X(e) of from expressions e into terms T,
+where we assume that D is implicitly available in the definitions:
+
+X(x) = x
+X(i) = ()
+X(e1 + e2) = let _ := X(e1) in X(e2)
+X(()) = ()
+X(⟂) = ()
+X(default(t)) = (let _ := () in T) if D |- t default_cic T
+X(default(t)) = () otherwise
+X(crash_never(e)) = let _ := X(e) in ()
+X(hdata()) = ()
+X(hread()) = ()
+X(hwrite(e)) = let _ := X(e) in ()
+X(permission(i -> v)) = X(v)
+X(pdata(e)) = let _ := () in X(e)
+X(pread(i @ e_perm)) = X(e_perm)
+X(pwrite(i := e_data @ e_perm)) = let _ := X(e_data) in X(e_perm)
+X(drop(e)) = let _ := X(e) in ()
+X(copy(e)) = let _ := () in X(e)
+X(e1; e2) = let _ := X(e1) in X(e2)
+X(let m x = e1 in e2) = let x := X(e1) in X(e2)
+X(None(t)) = None X(t)
+X(Some(e: t)) = Some X(t) X(e)
+X(if let Some(x) = e1 then e2 else e3) = match X(e1) with None => X(e3) | Some x => X(e2)
+X(S(e1, ..., en)) = _S X(e1) ... X(en)
+X(let S(x1, ..., xn) = e0 in eb) = match X(e0) with (_S x1 ... xn) => X(eb)
+X(λ[spec O L] x: μx tx. eb) = λx: X(tx). X(eb)
+X(λ[proof O L] x: μx tx. eb) = λx: X(tx). X(eb)
+X(λ[exec O L] x: μx tx. eb) = ()
+X(e1 e2) = X(e1) X(e2)
+
+==================================================================================================
+
+Theorem: Termination
+If
+  m ∈ {spec, proof}
+  C = D ; H ; P ; {}
+  |- D
+  C ; m |- (h0, e0) : μ t
+Then there is no infinite sequence (h1, e1) (h2, e2) (h3, e3) ... such that
+  (h0, e0) --> (h1, e1) --> (h2, e2) --> (h3, e3) --> ...
+
+By Lemma: Well-formed definitions, WF(X(C))
+Suppose that there was an infinite evaluation sequence:
+  (h0, e0) --> (h1, e1) --> (h2, e2) --> (h3, e3) --> ...
+By repeated application of Theorem: Preservation, we know for all i:
+  m ∈ {spec, proof}
+  C = D ; H ; P ; {}
+  |- D
+  C ; m |- (hi, ei) : μ t
+For each step (hi, ei) --> (hj, ej) where j = i + 1:
+  By Lemma: Well-formed expression, in the environment X(C),
+    X(ei) is a well-formed CIC term of type X(t)
+  By Lemma: Simulation, X(ei) -->+ X(ej)
+Therefore we have an infinite reduction sequence in CIC:
+  X(e0) -->+ X(e1) -->+ X(e2) -->+ X(e3) -->+ ...
+  (where each -->+ represents one or more CIC reduction steps)
+This contradicts CIC's strong normalization theorem, since X(e0) is a well typed CIC term
+  in the well-formed CIC environment X(C)
+
+==================================================================================================
+Corollary: Call termination
+If
+  mf ∈ {spec, proof}
+  e0 = (λ[mf O L] x: μx tx. eb) va
+  C = D ; H ; P ; {}
+  |- D
+  C ; m |- (h0, e0) : μ t
+Then there is no infinite sequence (h1, e1) (h2, e2) (h3, e3) ... such that
+  (h0, e0) --> (h1, e1) --> (h2, e2) --> (h3, e3) --> ...
+
+Note that ς = strict in e0's typing:
+  C = D ; H ; P ; Γ
+  C ; m |strict- e0 : μ t
+  D ; H ; {} ; spec(Γ) ; exec |strict- h0 : exec linear H
+  D ; exec |- H : Copy
+  |- H : static
+  -------------------------------------------------------
+  C ; m |- (h0, e0) : μ t
+
+Let vf = λ[mf O L] x: μx tx. eb
+Only one typing rule applies to (vf va) with ς = strict:
+  IF O = Once THEN is_linear(μ1)
+  C1 ; m |ς- vf : μ1 (Fn[mf O L] μa ta -> μb tb)
+  C2 ; m |ς- va : μa ta
+  mode_of(μ1) ⊑ mf
+  m ⊑ mf
+  ------------------------------------------------------------------
+  C1 # C2 ; m |ς- vf va : μb tb
+where C = C1 # C2 and ς = strict
+By Lemma: Value mode change:
+  C2 ; mf |ς- va : μa ta
+Four typing rules apply to vf = λ[mf O L] x: μx tx. eb with ς = strict
+  CASE main non-spec rule
+    D ; H ; Pb ; Γb, x -> μx tx ; mf |ς- eb : μb tb
+    D |- tx
+    function_body_context(O, L, P1, Γ, Pb, Γb, u)
+    non_spec_function_modes(mf, μx, μb', tb)
+    ----------------------------------------------------------------------------------
+    D ; H ; P1 ; Γ ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+    where μa ta = μx tx and C1 = D ; H ; P1 ; Γ
+    By Lemma: Function body weakening:
+      D ; H ; P1 ; Γ, x -> μx tx ; mf |ς- eb : μb tb
+    So we have:
+      C1, x -> μx tx ; mf |ς- eb : μb tb
+    So:
+      C1, x -> μa ta ; mf |ς- eb : μb tb
+
+  CASE dummy spec rule
+    ...
+    non_spec_function_modes(mf, μx, μb, tb)
+    ----------------------------------------------------------------------
+    !C ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+    From vf va rule above, we have mode_of(μ1) ⊑ mf where μ1 = spec, so mf = spec.
+    This contradicts non_spec_function_modes, so this case cannot happen.
+
+  CASE dummy shared rule
+    ...
+    ---------------------------------------------------------------------------------
+    !C ; m |ς- (λ[mf Once L] x: μx tx. eb) : mf shared (Fn[mf Once L] μx tx -> μb tb)
+    From vf fa rule above, if O = Once THEN is_linear(μ1)
+    This contradicts μ1 = mf shared, so this case cannot happen.
+
+  CASE main spec rule
+    !Cb, x -> spec tx ; spec |ς- eb : spec tb
+    !C1 |- tx
+    function_body_context(Many, static, !C1, !Cb, shared)
+    -------------------------------------------------------------------------------------------------
+    !C1 ; m |ς- (λ[spec Many static] x: spec tx. eb) : spec (Fn[spec Many static] spec tx -> spec tb)
+    where mf = spec and C1 = !C1 and μa ta = spec tx and μb tb = spec tb
+    By Lemma: Function body weakening:
+      !C1, x -> μx tx ; mf |ς- eb : μb tb
+    So: C1, x -> μa ta ; mf |ς- eb : μb tb
+
+So for all applicable rules (again, with ς = strict):
+  C1, x -> μa ta ; mf |ς- eb : μb tb
+Lemma: Single substitution says:
+  If C2 ; mf |ς- va : μa ta
+  and C1, x -> μa ta ; mf |ς- eb : μb tb
+  and C = C1 # C2
+  Then C ; mf |ς- eb[x := va] : μb tb
+So 
+  C ; mf |ς- eb[x := va] : μb tb
+The only applicable evaluation rule is:
+  (h0, (λ[mf O L] x: μx tx. eb) va) --> (h0, eb[x := va])
+By Theorem: Termination, (h0, eb[x := va]) terminates.
+Therefore, (h0, (λ[mf O L] x: μx tx. eb) va) terminates.
+
+==================================================================================================
+LEMMAS
+==================================================================================================
+
+==================================================================================================
+Lemma: Well-formed expression
+
+If
+  C = D ; H ; P ; Γ
+  D |- t for each x -> μ t in Γ
+  |- D
+  C ; m |ς- e : μ t
+  WF(X(C))
+  m ∈ {spec, proof}
+Then
+  in the environment X(C), optionally extended with additional unused _ variable declarations:
+    X(e) is a well-formed term of type X(t)
+    X(t) is a well-formed term of type Set
+
+By induction on C ; m |ς- e : μ t
+(note that ς may be strict or lax)
+
+CASE e = hdata() | hread() | hwrite(e) | pread(i @ e_perm) | pwrite(i := e_data @ e_perm)
+  The typing rules for all of these require m = exec, which contradicts m ∈ {spec, proof}.
+
+CASE
+    spec(C) = spec(C')
+    mode_of(μ) = mode_of(μ')
+    C' ; m |lax- e : μ' t
+    ----------------------------
+    C ; m |lax- e : μ t
+  By induction:
+    in the environment X(C'), optionally extended with additional unused _ variable declarations,
+    X(e) is a well-formed term of type X(t)
+  By definition of X(C') we know X(C') = X(C), since X ignores μ in Γ and X ignores P
+
+CASE e = x, main rule
+    m ⊑ mode_of(μx)
+    -------------------------------
+    !C, x -> μx tx ; m |ς- x : μx tx
+  By Lemma: Well-formed type, we know X(tx) has type Set
+  The environment X(!C, x -> μx tx) contains x: X(tx).
+  By the CIC Var typing rule, in X(!C, x -> μx tx), x has type X(tx).
+
+CASE e = x, shared rule
+    !C, x -> mx shared tx ; m |ς- x : spec tx
+  By Lemma: Well-formed type, we know X(tx) has type Set
+  The environment X(!C, x -> mx shared tx) contains x: X(tx).
+  By the CIC Var typing rule, in X(!C, x -> mx shared tx), x has type X(tx).
+
+CASE e = i
+    !C ; m |ς- i : μ int
+  X(i) = (), which has type unit
+
+CASE e = e1 + e2
+    C1 ; m |ς- e1 : μ int
+    C2 ; m |ς- e2 : μ int
+    -------------------------------
+    C1 # C2 ; m |ς- e1 + e2 : μ int
+  X(C) = X(C1 # C2) = X(C1) = X(C2)
+  By induction, in X(C), X(e1) has type X(int) = unit
+  By induction, in X(C), X(e2) has type X(int) = unit
+  X(e1 + e2) = let _ := X(e1) in X(e2)
+  By CIC Let rule, (let _ := X(e1) in X(e2)) has type unit
+
+CASE e = ()
+    !C ; m |ς- () : μ Unit
+  X(()) = (), which has type unit
+
+CASE e = ⟂
+    !C ; m |ς- ⟂ : spec Never
+  X(⟂) = (), which has type unit
+
+CASE e = default(t)
+    !C |- t
+    ------------------------------
+    !C ; m |ς- default(t) : spec t
+  where !C = D ; H ; !P ; !Γ
+  By definition of X:
+    X(default(t)) = (let _ := () in T) if D |- t default_cic T
+    X(default(t)) = () otherwise
+  By Lemma: default_cic exists:
+    There is a T such that D |- t default_cic T.
+    In the environment X(D), T is a well-formed term of type X(t).
+  So X(default(t)) = (let _ := () in T)
+  By CIC Let rule, (let _ := () in X(v)) has type X(t)
+
+CASE e = crash_never(e)
+    C ; m |ς- e1 : μ Never
+    μ != spec
+    ----------------------------------
+    C ; m |ς- crash_never(e1) : μ Unit
+  By induction, in X(C), X(e1) has type X(Never) = unit
+  X(crash_never(e)) = (let _ := X(e) in ())
+  By CIC Let rule, (let _ := X(e1) in ()) has type unit
+
+CASE e = permission(i -> v), main rule
+    !C ; m |ς- v : exec linear t
+    C ; exec |- t : Copy
+    -----------------------------------------------------------------
+    !C, i -> u ; m |ς- permission(i -> v) : proof u permission(i -> t)
+  By induction, in X(C), X(v) has type X(t) and X(t) has type Set
+  X(permission(i -> v)) = X(v)
+  X(permission(i -> t)) = X(t)
+  So X(permission(i -> v)) has type X(permission(i -> t))
+
+CASE e = permission(i -> v), dummy rule
+    !C ; m |ς- v : μ t
+    ------------------------------------------------------
+    !C ; m |ς- permission(i -> v) : spec permission(i -> t)
+  By induction, in X(C), X(v) has type X(t) and X(t) has type Set
+  X(permission(i -> v)) = X(v)
+  X(permission(i -> t)) = X(t)
+  So X(permission(i -> v)) has type X(permission(i -> t))
+
+CASE e = pdata(e1)
+    C ; m |ς- e1 : spec permission(i -> t)
+    -------------------------------------
+    C ; m |ς- pdata(e1) : spec t
+  By induction, in X(C), X(e1) has type X(permission(i -> t)) = X(t) and X(t) has type Set
+  X(pdata(e1)) = let _ := () in X(e1)
+  By CIC Let rule, (let _ := () in X(e1)) has type X(t)
+
+CASE e = drop(e1)
+    C ; m |ς- e1 : me linear t
+    C ; me |- t : Copy
+    ----------------------------------
+    C ; m |ς- drop(e1) : me shared Unit
+  By induction, in X(C), X(e1) has type X(t) and X(t) has type Set
+  X(drop(e1)) = let _ := X(e1) in ()
+  By CIC Let rule, (let _ := X(e1) in ()) has type unit
+
+CASE e = copy(e1)
+    C ; m |ς- e1 : me shared t
+    C ; me |- t : Copy
+    -------------------------------
+    C ; m |ς- copy(e1) : me linear t
+  By induction, in X(C), X(e1) has type X(t) and X(t) has type Set
+  X(copy(e1)) = let _ := () in X(e1)
+  By CIC Let rule, (let _ := () in X(e1)) has type X(t)
+
+CASE e = e1; e2
+    C1, shared(Cb) ; m |ς- e1: μ1 Unit
+    C2, linear(Cb) ; m |ς- e2: μ2 t2
+    -------------------------------------------
+    (C1 # C2), linear(Cb) ; m |ς- e1; e2 : μ2 t2
+  X(C1 # C2) = X(C1) = X(C2)
+  X(C) = X((C1 # C2), linear(Cb)) = X(C1, shared(Cb)) = X(C2, linear(Cb))
+  By induction, in X(C), X(e1) has type X(Unit) = unit
+  By induction, in X(C), X(e2) has type X(t2) and X(t2) has type Set
+  X(e1; e2) = let _ := X(e1) in X(e2)
+  By CIC Let rule, (let _ := X(e1) in X(e2)) has type X(t2)
+
+CASE e = let m1 x = e1 in e2
+    C1, shared(Cb) ; m |ς- e1: μ1 t1
+    C2, linear(Cb), x -> μ1 t1 ; m |ς- e2: μ2 t2
+    ...
+    ---------------------------------------------------------------------------------
+    (C1 # C2), linear(Cb) ; m |ς- let m1 x = e1 in e2 : μ2 t2
+  X(C1 # C2) = X(C1) = X(C2)
+  X(C) = X((C1 # C2), linear(Cb)) = X(C1, shared(Cb)) = X(C2, linear(Cb))
+  By induction, in X(C), X(e1) has type X(t1) and X(t1) has type Set
+  By Lemma: Well-formed type, X(t1) is a well-formed term with either type Prop or Set
+  By CIC W-Local-Assum for WF definition, WF(X(C), x: X(t1))
+  By induction, in (X(C), x: X(t1)), X(e2) has type X(t2) and X(t2) has type Set
+  X(let m x = e1 in e2) = let x := X(e1) in X(e2)
+  By CIC Let rule, (let x := X(e1) in X(e2)) has type X(t2)
+
+CASE e = None(t)
+    !C |- t
+    --------------------------------
+    !C ; m |ς- None(t) : μ Option(t)
+  By Lemma: Well-formed type, X(t) is a well-formed term of type Set
+  By the CIC Constr and App rules, X(None(t)) = None X(t) has type X(Option(t)) = Option X(t)
+
+CASE e = Some(e: t)
+    C ; m |ς- e : μ t
+    ----------------------------------
+    C ; m |ς- Some(e: t) : μ Option(t)
+  By induction, in X(C), X(e) has type X(t) and X(t) has type Set
+  By the CIC Constr and App rules, X(Some(e: t)) = Some X(t) X(e) has type X(Option(t)) = Option X(t)
+
+CASE e = if let Some(x) = e1 then e2 else e3
+    C1 ; m |ς- e3 : μ1 Option(t1)
+    Cb, x -> μ1 t1 ; mb |ς- e2 : μb tb
+    Cb ; mb |ς- e3 : μb tb
+    m ⊑ mb
+    mode_of(μ1) ⊑ mb OR (mode_of(μ1) = spec AND mb = proof)
+    -----------------------------------------------------------
+    C1 # Cb ; m |ς- if let Some(x) = e1 then e2 else e3 : μb tb
+  By induction, in X(C), X(e1) has type X(Option(t1)) = option X(t1)
+  By induction, in X(C), X(e3) has type X(tb) and X(tb) has type Set
+  By Lemma: Well-formed type, X(t1) is a well-formed terms with type Set
+  By CIC W-Local-Assum for WF definition, WF(X(C), x: X(t1))
+  By induction, in (X(C), x: X(t1)), X(e2) has type X(tb)
+  X(if let Some(x) = e1 then e2 else e3) = match X(e1) with None => X(e3) | Some x => X(e2)
+  By the CIC match typing rule (case),
+    (match X(e1) with None => X(e3) | Some x => X(e2)) has type X(tb)
+
+CASE e = S(e1, ..., en)
+    C1 # ... # Cn = ..., S -> (m1 t1, ..., mn tn), ... ; ... ; ...
+    C1 ; m |ς- e1 : (m1 ⊔ μ) t1
+    ...
+    Cn ; m |ς- en : (mn ⊔ μ) tn
+    --------------------------------------------------------------
+    C1 # ... # Cn ; m |ς- S(e1, ..., en) : μ S
+  X(C) = X(C1 # ... # Cn) = X(C1) = ... = X(Cn)
+  By induction, in X(C), X(e1) has type X(t1)
+  ...
+  By induction, in X(C), X(en) has type X(tn)
+  X(S(e1, ..., en)) = _S X(e1) ... X(en)
+  By the CIC Constr and App rules, _S X(e1) ... X(en) has type S
+  X(S) = S
+
+CASE e = let S(x1, ..., xn) = e0 in eb
+    C0 # Cb = ..., S -> (m1 t1, ..., mn tn), ...; ... ; ...
+    C0 ; m |ς- e0 : μ0 S
+    Cb, x1: (m1 ⊔ μ0) t1, ..., xn: (mn ⊔ μ0) tn ; m |ς- eb: μb tb
+    mode_of(μb) |- tb : static
+    ------------------------------------------------------------
+    C0 # Cb ; m |ς- let S(x1, ..., xn) = e0 in eb : μb tb
+  X(C) = X(C0 # Cb) = X(C0) = X(Cb)
+  By induction, in X(C), X(e0) has type X(S) = S
+  By Lemma: fields typed, D', Drec, Dpos |- t1 ... D', Drec, Dpos |- tn where D', Drec, Dpos = D
+  By Lemma: Well-formed rec-type, X(t1) ... X(tn) are a well-formed terms with type Set
+  By CIC W-Local-Assum for WF definition, WF(X(C), x1: X(t1), ..., xn: X(tn))
+  By induction, in (X(C), x1: X(t1), ..., xn: X(tn)), X(eb) has type X(tb) and X(tb) has type Set
+  X(let S(x1, ..., xn) = e0 in eb) = (match X(e0) with (_S x1 ... xn) => X(eb))
+  By the CIC match typing rule (case),
+    (match X(e0) with (_S x1 ... xn) => X(eb)) has type X(tb)
+
+CASE e = (λ[mf O L] x: μx tx. eb), main non-spec rule
+    D ; H ; Pb ; Γb, x -> μx tx ; mf |ς- eb : μb tb
+    D |- tx
+    function_body_context(O, L, P, Γ, Pb, Γb, u)
+    non_spec_function_modes(mf, μx, μb, tb)
+    --------------------------------------------------------------------------------
+    D ; H ; P ; Γ ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+  C = D ; H ; P ; Γ
+  Cb = D ; H ; Pb ; Γb
+  X(Γ) = X(Γb)
+  X(C) = X(Cb)
+  CASE mf = spec or mf = proof
+    By Lemma: Well-formed type, X(tx) is a well-formed term with type Set
+    By CIC W-Local-Assum for WF definition, WF(X(C), x: X(tx))
+    By induction, in (X(C), x: X(tx)), X(eb) has type X(tb) and X(tb) has type Set
+    X(λ[mf O L] x: μx tx. eb) = λx: X(tx). X(eb)
+    By the CIC Lam typing rule, in X(C), (λx: X(tx). X(eb)) has type X(tx) -> X(tb)
+    X(Fn[mf O L] μx tx -> μb tb) = X(tx) -> X(tb)
+  CASE mf = exec
+    X(λ[exec O L] x: μx tx. eb) = ()
+    X(Fn[exec O L] μx tx -> μb tb) = unit
+
+CASE e = (λ[mf O L] x: μx tx. eb), dummy spec rule
+    as_nonlinear(!C) = as_nonlinear(C')
+    C', x -> μx tx ; mf |ς- eb : μb tb
+    !C |- tx
+    non_spec_function_modes(mf, μx, μb, tb)
+    ---------------------------------------------------------------------
+    !C ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+  X(C) = X(!C) = X(C')
+  CASE mf = spec or mf = proof
+    By Lemma: Well-formed type, X(tx) is a well-formed term with type Set
+    By CIC W-Local-Assum for WF definition, WF(X(C), x: X(tx))
+    By induction, in (X(C), x: X(tx)), X(eb) has type X(tb) and X(tb) has type Set
+    X(λ[mf O L] x: μx tx. eb) = λx: X(tx). X(eb)
+    By the CIC Lam typing rule, in X(C), (λx: X(tx). X(eb)) has type X(tx) -> X(tb)
+    X(Fn[mf O L] μx tx -> μb tb) = X(tx) -> X(tb)
+  CASE mf = exec
+    X(λ[exec O L] x: μx tx. eb) = ()
+    X(Fn[exec O L] μx tx -> μb tb) = unit
+
+CASE e = (λ[mf Once L] x: μx tx. eb), dummy shared rule
+    as_nonlinear(!C) = as_nonlinear(C')
+    C', x -> μx tx ; mf |ς- eb : μb tb
+    !C |- tx
+    non_spec_function_modes(mf, μx, μb, tb)
+    --------------------------------------------------------------------------------
+    !C ; m |ς- (λ[mf Once L] x: μx tx. eb) : mf shared (Fn[mf Once L] μx tx -> μb tb)
+  X(C) = X(!C) = X(C')
+  CASE mf = spec or mf = proof
+    By Lemma: Well-formed type, X(tx) is a well-formed term with type Set
+    By CIC W-Local-Assum for WF definition, WF(X(C), x: X(tx))
+    By induction, in (X(C), x: X(tx)), X(eb) has type X(tb) and X(tb) has type Set
+    X(λ[mf Once L] x: μx tx. eb) = λx: X(tx). X(eb)
+    By the CIC Lam typing rule, in X(C), (λx: X(tx). X(eb)) has type X(tx) -> X(tb)
+    X(Fn[mf Once L] μx tx -> μb tb) = X(tx) -> X(tb)
+  CASE mf = exec
+    X(λ[exec Once L] x: μx tx. eb) = ()
+    X(Fn[exec Once L] μx tx -> μb tb) = unit
+
+CASE e = (λ[spec Many static] x: spec tx. eb), spec rule
+    !Cb, x -> spec tx ; spec |ς- eb : spec tb
+    !C |- tx
+    function_body_context(Many, static, !C, !Cb, shared)
+    -----------------------------------------------------------------------------------------------
+    !C ; m |ς- (λ[spec Many static] x: spec tx. eb) : spec (Fn[spec Many static] spec tx -> spec tb)
+  X(C) = X(!C) = X(!Cb)
+  By Lemma: Well-formed type, X(tx) is a well-formed term with type Set
+  By CIC W-Local-Assum for WF definition, WF(X(C), x: X(tx))
+  By induction, in (X(C), x: X(tx)), X(eb) has type X(tb) and X(tb) has type Set
+  X(λ[spec Many static] x: spec tx. eb) = λx: X(tx). X(eb)
+  By the CIC Lam typing rule, in X(C), (λx: X(tx). X(eb)) has type X(tx) -> X(tb)
+  X(Fn[spec Many static] spec tx -> spec tb) = X(tx) -> X(tb)
+
+CASE e = ef ea
+    IF O = Once THEN is_linear(μ1)
+    C1 ; m |ς- ef : μ1 (Fn[mf O L] μa ta -> μb tb)
+    C2 ; m |ς- ea : μa ta
+    mode_of(μ1) ⊑ mf
+    m ⊑ mf
+    ------------------------------------------------------------------
+    C1 # C2 ; m |ς- ef ea : μb tb
+  X(C) = X(C1 # C2) = X(C1) = X(C2)
+  Since m ∈ {spec, proof} and m ⊑ mf, we know mf ∈ {spec, proof}.
+  By induction, in X(C), X(ef) has type
+    X(Fn[mf O L] μa ta -> μb tb) = X(ta) -> X(tb) and X(ta) -> X(tb) has type Set, so X(tb) has type Set
+  By induction, in X(C), X(ea) has type X(ta)
+  X(ef ea) = X(ef) X(ea)
+  By CIC App typing rule, X(ef) X(ea) has type X(tb)
+
+==================================================================================================
+Lemma: Simulation
+
+If
+  C = D ; H ; P ; {}
+  |- D
+  C ; m |strict- e : μ t
+  m ∈ {spec, proof}
+  (h, e) --> (h', e')
+Then
+  h = h'
+  X(e) -->+ X(e')
+  (where T -->+ T' means T reduces to T' in one or more CIC reduction steps)
+
+By induction on size of e.
+By cases on (h, e) --> (h', e').
+
+NON-APPLICABLE CASES
+
+CASE hdata() | hread() | hwrite(e) | pread(i @ e_perm) | pwrite(i := e_data @ e_perm)
+  The typing rule for all of these require m = exec, which contradicts m ∈ {spec, proof}.
+  (Note that ς = strict here, so typing rules that rely on lax do not apply)
+
+CASE x | i | () | ⟂ | permission(i -> v) | None(t) | λ[m O L] x: μx tx. eb
+  No rule (h, e) --> (h', e') exists for these.
+
+
+NON-CONGRUENCE CASES
+
+CASE (h, i1 + i2) --> (h, i3)
+  X(i1 + i2) = (let _ := X(i1) in X(i2)) = (let _ := () in ()) -->+ () by CIC ζ-reduction (Zeta)
+  X(i3) = ()
+
+CASE (h, default(t)) --> (h, v) where D |- t defaults_to v
+  The definition of X gives two cases:
+    X(default(t)) = (let _ := () in X(v)) if D |- t defaults_to v
+    X(default(t)) = () otherwise
+  Since we know D |- t defaults_to v from the (h, default(t)) --> (h, v) evaluation rule,
+  we know X(default(t)) = (let _ := () in X(v)).
+  By CIC ζ-reduction (Zeta), (let _ := () in X(v)) -->+ X(v)
+
+CASE pdata(permission(i -> v)) -> v
+  X(pdata(permission(i -> v))) = (let _ := () in X(v)) -->+ X(v) by CIC ζ-reduction (Zeta)
+
+CASE (h, drop(v)) --> (h, ())
+  X(drop(v)) = (let _ := X(v) in ()) -->+ () by CIC ζ-reduction (Zeta)
+  X(()) = ()
+
+CASE (h, copy(v)) --> (h, v)
+  X(copy(v)) = (let _ := () in X(v)) -->+ X(v) by CIC ζ-reduction (Zeta)
+
+CASE (h, () ; e2) --> (h, e2)
+  X((); e2) = (let _ := () in X(e2)) -->+ X(e2) by CIC ζ-reduction (Zeta)
+
+CASE (h, let m x = v1 in e2) --> (h, e2[x := v1])
+  X(let m x = v1 in e2) = (let x := X(v1) in X(e2)) -->+ X(e2)[x := X(v1)] by CIC ζ-reduction (Zeta)
+  By Lemma: X-substitution:
+    X(e2[x := v1]) = X(e2)[x := X(v1)]
+
+CASE (h, if let Some(x) = None(t) then e2 else e3) --> (h, e3)
+  X(if let Some(x) = None(t) then e2 else e3)
+    = match None X(t) with None => X(e3) | Some x => X(e2)
+    -->+ X(e3) by ι-reduction (Iota)
+
+CASE (h, if let Some(x) = Some(v: t) then e2 else e3) --> (h, e2[x := v])
+  X(if let Some(x) = Some(v: t) then e2 else e3)
+    = match Some X(t) X(v) with None => X(e3) | Some x => X(e2)
+    -->+ X(e2)[x := X(v)] by ι-reduction (Iota)
+  By Lemma: X-substitution:
+    X(e2[x := v]) = X(e2)[x := X(v)]
+
+CASE (h, let S(x1, ..., xn) = S(v1, ..., vn) in eb) --> (h, eb[x1 := v1, ..., xn := vn])
+  X(let S(x1, ..., xn) = S(v1, ..., vn) in eb)
+    = match (_S X(v1) ... X(vn)) with (_S x1 ... xn) => X(eb)
+    -->+ X(eb)[x1 := X(v1), ..., xn := X(vn)] by ι-reduction (Iota)
+      (... if ι-reduction is defined directly for CIC match; if match is encoding using CIC case,
+      then the step is by ι-reduction for case followed by β-reduction;
+      the CIC reference is slightly ambiguous about this, but the ultimate result is clear)
+  By Lemma: X-substitution:
+    X(eb[x1 := v1, ..., xn := vn]) = X(eb)[x1 := X(v1), ..., xn := X(vn)]
+
+CASE (h, (λ[mf O L] x: μx tx. eb) vx) --> (h, eb[x := vx]) where mf != exec
+  X((λ[mf O L] x: μx tx. eb) vx)
+    = X(λ[mf O L] x: μx tx. eb) X(vx)
+    = (λx: X(tx). X(eb)) X(vx)
+    -->+ X(eb)[x := X(vx)] by CIC β-reduction (Beta)
+  By Lemma: X-substitution:
+    X(eb[x := vx]) = X(eb)[x := X(vx)]
+
+CASE (h, (λ[mf O L] x: μx tx. eb) vx) --> (h, eb[x := vx]) where mf = exec
+  By the typing rule for e = (ef ea):
+    ...
+    m ⊑ mf
+    ------------------------------------------------------------------
+    C1 # C2 ; m |strict- ef ea : μb tb
+  For mf = exec, the m ⊑ mf premise means m ⊑ exec, which means m = exec.
+  This contradicts the assumption that m ∈ {spec, proof},
+  so this case cannot happen.
+
+CASE crash_never(v)
+  No rule (h, e) --> (h', e') exists for this, so this case cannot happen.
+
+
+CONGRUENCE CASES
+
+CASE (h, e1 + e2) --> (h', e1' + e2) where (h, e1) --> (h', e1')
+  By typing (with ς = strict):
+    C1 ; m |ς- e1 : μ int
+    C2 ; m |ς- e2 : μ int
+    ------------------------------
+    C1 # C2 ; m |ς- e1 + e2 : μ int
+  By induction on e1:
+    h = h'
+    X(e1) -->+ X(e1')
+  CIC allows reduction inside terms, so:
+    X(e1 + e2) = let _ := X(e1) in X(e2) -->+ let _ := X(e1') in X(e2) = X(e1' + e2)
+
+CASE (h, v1 + e2) --> (h', v1 + e2') where (h, e2) --> (h', e2')
+  By typing (with ς = strict):
+    C1 ; m |ς- e1 : μ int
+    C2 ; m |ς- e2 : μ int
+    ------------------------------
+    C1 # C2 ; m |ς- e1 + e2 : μ int
+  By induction on e2:
+    h = h'
+    X(e2) -->+ X(e2')
+  CIC allows reduction inside terms (even for e2, which is inside a let binding), so:
+    X(v1 + e2) = let _ := X(v1) in X(e2) -->+ let _ := X(v1) in X(e2') = X(v1 + e2')
+
+Other applicable congruence cases are similar:
+  E = [_]                                 
+    | crash_never(E)                      | X(crash_never(e)) = let _ := X(e) in ()
+    | pdata(E)                            | X(pdata(e)) = let _ := () in X(e)
+    | drop(E)                             | X(drop(e)) = let _ := X(e) in ()
+    | copy(E)                             | X(copy(e)) = let _ := () in X(e)
+    | E1; e2                              | X(e1; e2) = let _ := X(e1) in X(e2)
+    | let m x = E1 in e2                  | X(let m x = e1 in e2) = let x := X(e1) in X(e2)
+    | Some(E: t)                          | X(Some(e: t)) = Some X(t) X(e)
+    | if let Some(x) = E1 then e2 else e3 | X(if let Some(x) = e1 then e2 else e3) = match X(e1) with None => X(e3) | Some x => X(e2)
+    | S(v1, ..., vi, Ej, ek, ..., en)     | X(S(e1, ..., en)) = _S X(e1) ... X(en)
+    | let S(x1, ..., xn) = E0 in eb       | X(let S(x1, ..., xn) = e0 in eb) = match X(e0) with (_S x1 ... xn) => X(eb)
+    | E1 e2 | v1 E2                       | X(e1 e2) = X(e1) X(e2)
+  In particular, each typing rule for these cases has a premise with the same m ∈ {spec, proof}
+  as in the conclusion, so we can apply induction in all the cases (where ς = strict in all cases):
+  E = [_]                                 
+    | crash_never(E)                      | C ; m |ς- e : μ Never
+    | pdata(E)                            | C ; m |ς- e : spec permission(i -> t)
+    | drop(E)                             | C ; m |ς- e : me linear t
+    | copy(E)                             | C ; m |ς- e : me shared t
+    | E1; e2                              | C1, shared(Cb) ; m |ς- e1: μ1 Unit
+    | let m x = E1 in e2                  | C1, shared(Cb) ; m |ς- e1: μ1 t1
+    | if let Some(x) = E1 then e2 else e3 | C1 ; m |ς- e1 : μ1 Option(t1)
+    | Some(E: t)                          | C ; m |ς- e : μ t
+    | S(v1, ..., vi, Ej, ek, ..., en)     | Cj ; m |ς- ej : ...
+    | let S(x1, ..., xn) = E0 in eb       | C0 ; m |ς- e0 : μ0 S
+    | E1 e2 | v1 E2                       | C1 ; m |ς- ef : ...  C2 ; m |ς- ea : ...
+
+==================================================================================================
+Lemma: Well-formed definitions
+
+If |- D
+Then WF(X(D ; H ; P ; {}))
+
+By mutual induction on |- D
+
+CASE D = {}
+  X(D) = {}, which is well formed
+
+CASE D = D0, d1
+  Let d1 = S -> (m1 t1, ..., mn tn)
+  By definition of |- D, we know:
+    |- D0
+    D0 |- d1
+  By induction, WF(X(D0 ; H ; P ; {}))
+  By definition of D0 |- d1:
+    D0 ; {} ; d1 |- t1
+    ...
+    D0 ; {} ; d1 |- tn
+    m1 |- t1 : static
+    ...
+    mn |- tn : static
+    ------------------
+    D0 |- d1
+  Lemma: Well-formed rec-type for D0 ; {} ; d1 |- t says:
+    If
+      D' = D0, d1
+      |- D'
+      D0 ; {} ; d1 |- t
+    Then:
+      In the environment with declarations X(D'), X(t) is a well-formed term with type Set.
+      If S not in domain(D'), then S does not occur in X(t).
+      If S not in domain(D0), then S occurs strictly positively in X(t).
+  Based on this, since S is not in domain(D0), S occurs strictly positively in X(t1) ... X(tn).
+  X(S -> (m1 t1, ..., mn tn)) = Ind S: Set := _S: X(t1) -> ... -> X(tn) -> S
+  By CIC W-Ind rule, WF(X(D0), X(S -> (m1 t1, ..., mn tn)); H; P; {})
+
+==================================================================================================
+Lemma: Well-formed type
+If
+  |- D
+  D |- t
+Then in the environment with declarations X(D), X(t) is a well-formed term with type Set.
+
+By definition of D |- t:
+  D ; {} ; {} |- t
+
+Conclusion follows by Lemma: Well-formed rec-type
+
+==================================================================================================
+Lemma: Well-formed rec-type
+If
+  D' = D, Drec, Dpos
+  |- D'
+  D ; Drec ; Dpos |- t
+Then:
+  In the environment with declarations X(D'), X(t) is a well-formed term with type Set.
+  If S not in domain(D'), then S does not occur in X(t).
+  If S not in domain(D), then S occurs strictly positively in X(t).
+
+By induction on D ; Drec ; Dpos |- t
+
+Note: by saying D' = D, Drec, Dpos, we say the D, Drec, and Dpos have disjoint domains.
+
+CASE t = int | Unit | Never
+  D ; Drec ; Dpos |- int
+  D ; Drec ; Dpos |- Unit
+  D ; Drec ; Dpos |- Never
+  X(t) = unit
+  unit is well-formed in X(D') with type Set
+
+CASE t = permission(i -> t')
+  X(t') = t, so follows directly by induction
+
+CASE t = Option(t')
+    D ; Drec, Dpos ; {} |- t'
+    -----------------------------
+    D ; Drec ; Dpos |- Option(t')
+  X(Option(t')) = option X(t')
+  By induction, X(t') is well formed in X(D') with type Set.
+  By CIC App rule, option X(t') is well formed in X(D') with type Set.
+
+CASE t = S
+    D, Drec = ..., S -> (...), ...
+    ------------------------------
+    D ; Drec ; Dpos |- S
+  X(S) = S
+  S is declared in X(D') as:
+    Ind S: Set := _S: X(t1) -> ... -> X(tn) -> S
+  S is a well-formed term with type Set in X(D').
+  S occurs strictly positively in S
+
+CASE t = Fn[exec O L] μ1 t1 -> μ2 t2
+    D ; Drec, Dpos ; {} |- t1
+    D ; Drec, Dpos ; {} |- t2
+    ...
+    ----------------------------------------------
+    D ; Drec ; Dpos |- Fn[exec O L] μ1 t1 -> μ2 t2
+  X(Fn[exec O L] μ1 t1 -> μ2 t2) = unit
+  unit is well-formed in X(D') with type Set
+
+CASE t = Fn[m O L] μ1 t1 -> μ2 t2 where m != exec
+    m ∈ {spec, proof}
+    D ; {} ; {} |- t1
+    D ; Drec ; Dpos |- t2
+    ...
+    -------------------------------------------
+    D ; Drec ; Dpos |- Fn[m O L] μ1 t1 -> μ2 t2
+  By induction on t1:
+    X(t1) is well formed in X(D), which means it is well-formed in X(D')
+    If S not in domain(D), then S does not occur in X(t1).
+      This implies if S not in domain(D'), then S does not occur in X(t1).
+    If S not in domain(D), then S occurs strictly positively in X(t1).
+  By induction on t2:
+    X(t2) is well formed in X(D')
+    If S not in domain(D'), then S does not occur in X(t2).
+    If S not in domain(D), then S occurs strictly positively in X(t2).
+  By CIC Prod-Set typing rule, X(Fn[m O L] μ1 t1 -> μ2 t2) = X(t1) -> X(t2) has type Set
+  If S not in domain(D'), then S does not occur in X(t1) -> X(t2).
+  If S not in domain(D):
+    S occurs strictly positively in X(t2)
+    S does not occur at all in X(t1)
+    therefore S occurs strictly positively in X(t1) -> X(t2)
+
+==================================================================================================
+Lemma: default_cic exists
+
+If
+  |- D
+  D |- t
+Then
+  There is a T such that D |- t default_cic T.
+  In the environment X(D), T is a well-formed term of type X(t).
+
+By Lemma: default_cic exists expanded
+
+==================================================================================================
+Lemma: default_cic exists expanded
+
+Let |D| denote the number of d declarations in D
+
+If
+  D = D0, Drec, Dpos
+  D = d1 ... dn
+  |Drec| + |Dpos| <= 1
+  Drec = dn or Drec = {}
+  Dpos = dn or Dpos = {}
+  |- D
+  D0 ; Drec ; Dpos |- t
+Then
+  There is a T such that D |- t default_cic T.
+  In the environment X(D), T is a well-formed term of type X(t).
+
+By induction on lexicographic pair (|D0| + |Drec|, t).
+
+CASES t = int | Unit | Never | Option(t') | Fn[exec O L] μ1 t1 -> μ2 t2
+  These are base cases that immediately have a default_cic:
+  D |- int default_cic ()
+  D |- Unit default_cic ()
+  D |- Never default_cic ()
+  D |- Option(t) default_cic None X(t)
+  D |- Fn[exec O L] μ1 t1 -> μ2 t2 default_cic ()
+
+CASE t = permission(i -> t')
+  By induction on t' (keeping D0 ; Drec ; Dpos the same in the induction, reducing t to t' in induction)
+    D |- t' default_cic T
+    --------------------------------------
+    D |- permission(i -> t') default_cic T
+
+CASE t = S
+  This is the interesting case.  By the rule for D0 ; Drec ; Dpos |- t we have:
+    D0, Drec = ..., dj, ...
+    -----------------------
+    D0 ; Drec ; Dpos |- S
+  where dj = S -> (m1 t1, ..., mn tn)
+  Let D = d1 ... di dj dk ... dn
+  Unrolling the definition of |- D gives us:
+    d1 ... di |- dj
+  Note that d1 ... di is a subsequence of D0, since Drec and Dpos can only contain the last element of D.
+  Let D0' = d1 ... di
+    D0' |- dj
+  By the definition of D0' |- dj
+    dj = S -> (m1 t1, ..., mn tn)
+    D0' ; {} ; dj |- t1
+    ...
+    D0' ; {} ; dj |- tn
+    m1 |- t1 : static
+    ...
+    mn |- tn : static
+    -----------------
+    D0' |- dj
+  Let Drec' = {}. We can rewrite the typings of t1 ... tn above as:
+    D0' ; Drec' ; dj |- t1
+    ...
+    D0' ; Drec' ; dj |- tn
+  Since we know D0, Drec = ..., dj, ... we know dj is either in D0 or Drec
+  CASE dj in D0:
+    |D0'| < |D0|, since D0' is a subsequence of D0 and D0' does not contain dj
+  CASE dj in Drec:
+    |D0'| <= |D0|, since D0' is a subsequence of D0
+    |Drec'| < |Drec|, since 0 < 1
+  In either case, |D0'| + |Drec'| < |D0| + |Drec|
+  So we can use induction on the typings of t1 ... tn:
+    There is a T1 such that D0', Drec', dj |- t1 default_cic T1.
+    In the environment X(D0', Drec', dj), T1 is a well-formed term of type X(t1).
+    ...
+    There is a Tn such that D0', Drec', dj |- tn default_cic Tn.
+    In the environment X(D0', Drec', dj), Tn is a well-formed term of type X(tn).
+  By Lemma: datatypes weakening:
+    There is a T1 such that D |- t1 default_cic T1.
+    In the environment X(D), T1 is a well-formed term of type X(t1).
+    ...
+    There is a Tn such that D |- tn default_cic Tn.
+    In the environment X(D), Tn is a well-formed term of type X(tn).
+  By the definition of default_cic:
+    D = ..., S -> (m1 t1, ..., mn tn), ...
+    D |- t1 default_cic T1
+    ...
+    D |- tn default_cic Tn
+    ------------------------------
+    D |- S default_cic S T1 ... Tn
+
+CASE t = Fn[m O L] μ1 t1 -> μ2 t2 where m ∈ {spec, proof}
+  (Note: see above for m = exec case)
+  By induction on t2:
+    m ∈ {spec, proof}
+    D |- t2 default_cic T2
+    -------------------------------------------------------
+    D |- Fn[m O L] μ1 t1 -> μ2 t2 default_cic λx: X(t1). T2
+  Note that we keep D0 ; Drec ; Dpos the same in t2:
+    m ∈ {spec, proof}
+    D0 ; {} ; {} |- t1
+    D0 ; Drec ; Dpos |- t2
+    ...
+    --------------------------------------------
+    D0 ; Drec ; Dpos |- Fn[m O L] μ1 t1 -> μ2 t2
+
+==================================================================================================
+Lemma: datatypes weakening
+
+If
+  D = d1 ... di
+  D' = d1 ... di dj ... dn
+  |- D'
+  D |- t default_cic T
+  In the environment X(D), T is a well-formed term of type X(t)
+Then
+  D' |- t default_cic T
+  In the environment X(D'), T is a well-formed term of type X(t)
+
+By induction on lexicographic pair (|D'|, t)
+
+Base case:
+  D' = D
+
+Inductive case:
+  D' = d1 ... di dj ... dm dn
+  Let Dm = d1 ... di dj ... dm, so D' = Dm dn
+  By induction:
+    Dm |- t default_cic T
+    In the environment X(Dm), T is a well-formed term of type X(t)
+  By induction on t, each case of Dm |- t default_cic T stays the same when dn is added to Dm.
+  Adding X(dn) to X(Dm) leaves T well typed.
+
+==================================================================================================
+Lemma: X-substitution
+
+X(eb[x1 := v1, ..., xn := vn]) = X(eb)[x1 := X(v1), ..., xn := X(vn)]
+
+By induction on eb
+
+CASE X(x) = x where x = xi
+  X(x[x1 := v1, ..., xn := vn]) = X(vi)
+  X(x)[x1 := X(v1), ..., xn := X(vn)] = xi[x1 := X(v1), ..., xn := X(vn)] = X(vi)
+
+CASE X(x) = x where x != x1, ..., x != xn
+  X(x[x1 := v1, ..., xn := vn]) = x
+  X(x)[x1 := X(v1), ..., xn := X(vn)] = x[x1 := X(v1), ..., xn := X(vn)] = x
+
+CASE X(e1 + e2) = let _ := X(e1) in X(e2)
+  By induction: X(e1[x1 := v1, ..., xn := vn]) = X(e1)[x1 := X(v1), ..., xn := X(vn)]
+  By induction: X(e2[x1 := v1, ..., xn := vn]) = X(e2)[x1 := X(v1), ..., xn := X(vn)]
+  X((e1 + e2)[x1 := v1, ..., xn := vn])
+    = X(e1[x1 := v1, ..., xn := vn] + e2[x1 := v1, ..., xn := vn])
+    = let _ := X(e1[x1 := v1, ..., xn := vn]) in X(e2[x1 := v1, ..., xn := vn])
+    = let _ := X(e1)[x1 := X(v1), ..., xn := X(vn)] in X(e2)[x1 := X(v1), ..., xn := X(vn)] (using the induction results)
+  X(e1 + e2)[x1 := X(v1), ..., xn := X(vn)]
+    = (let _ := X(e1) in X(e2))[x1 := X(v1), ..., xn := X(vn)]
+    = let _ := X(e1)[x1 := X(v1), ..., xn := X(vn)] in X(e2)[x1 := X(v1), ..., xn := X(vn)]
+
+Other cases are similar
+
+==================================================================================================
+Lemma: fields typed
+
+If
+  |- D
+  D = ..., S -> (m1 t1, ..., mn tn), ...; ... ; ...
+Then for some D', Drec, Dpos = D,
+  D', Drec, Dpos |- t1
+  ...
+  D', Drec, Dpos |- tn
+
+Follows by unrolling the definition of |- D to get:
+  D0 |- d
+where (D0, d) is a prefix of D and d = S -> (m1 t1, ..., mn tn)
+The rule for D0 |- d then says:
+  D0 ; {} ; d |- t1
+  ...
+  D0 ; {} ; d |- tn
+Let Drec = {}
+Let Dpos = d
+Let D', {}, d = D
+By Lemma: datatypes type weakening:
+  D', {}, d |- t1
+  ...
+  D', {}, d |- tn
+
+==================================================================================================

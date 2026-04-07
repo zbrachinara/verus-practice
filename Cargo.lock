@@ -9,24 +9,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
-name = "builtin"
-version = "0.1.0"
-source = "git+https://github.com/verus-lang/verus.git#ec1bccdabd61d13a70bfbb5b942778bf773d7ca1"
-
-[[package]]
-name = "builtin_macros"
-version = "0.1.0"
-source = "git+https://github.com/verus-lang/verus.git#ec1bccdabd61d13a70bfbb5b942778bf773d7ca1"
-dependencies = [
- "prettyplease_verus",
- "proc-macro2",
- "quote",
- "syn",
- "syn_verus",
- "synstructure",
-]
-
-[[package]]
 name = "hashbrown"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -43,19 +25,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "prettyplease_verus"
-version = "0.2.29"
-source = "git+https://github.com/verus-lang/verus.git#ec1bccdabd61d13a70bfbb5b942778bf773d7ca1"
-dependencies = [
- "proc-macro2",
- "syn_verus",
-]
-
-[[package]]
 name = "proc-macro2"
-version = "1.0.95"
+version = "1.0.106"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02b3e5e68a3a1a02aad3ec490a98007cbc13c37cbe84a3cd7b8e406d76e7f778"
+checksum = "8fd00f0bb2e90d81d1044c2b32617f68fcb9fa3bb7640c23e9c748e53fb30934"
 dependencies = [
  "unicode-ident",
 ]
@@ -70,17 +43,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "state_machines_macros"
-version = "0.1.0"
-source = "git+https://github.com/verus-lang/verus.git#ec1bccdabd61d13a70bfbb5b942778bf773d7ca1"
-dependencies = [
- "indexmap",
- "proc-macro2",
- "quote",
- "syn_verus",
-]
-
-[[package]]
 name = "syn"
 version = "2.0.101"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -92,24 +54,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "syn_verus"
-version = "2.0.96"
-source = "git+https://github.com/verus-lang/verus.git#ec1bccdabd61d13a70bfbb5b942778bf773d7ca1"
-dependencies = [
- "proc-macro2",
- "quote",
- "unicode-ident",
-]
-
-[[package]]
 name = "synstructure"
-version = "0.13.0"
-source = "git+https://github.com/mystor/synstructure.git?rev=1079497eb2bea252433dac53afe41291d8779641#1079497eb2bea252433dac53afe41291d8779641"
+version = "0.13.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "728a70f3dbaf5bab7f0c4b1ac8d7ae5ea60a4b5549c8a5914361c99147a709d2"
 dependencies = [
  "proc-macro2",
  "quote",
  "syn",
- "unicode-xid",
 ]
 
 [[package]]
@@ -119,25 +71,66 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5a5f39404a5da50712a4c1eecf25e90dd62b613502b7e925fd4e4d19b5c96512"
 
 [[package]]
-name = "unicode-xid"
-version = "0.2.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
-
-[[package]]
 name = "verus-test"
 version = "0.1.0"
 dependencies = [
- "state_machines_macros",
  "vstd",
 ]
 
 [[package]]
-name = "vstd"
-version = "0.1.0"
-source = "git+https://github.com/verus-lang/verus.git#ec1bccdabd61d13a70bfbb5b942778bf773d7ca1"
+name = "verus_builtin"
+version = "0.0.0-2026-04-05-0114"
+source = "git+https://github.com/verus-lang/verus.git#9c1e3bedad1c44db293ec36b7bad646a94eea421"
+
+[[package]]
+name = "verus_builtin_macros"
+version = "0.0.0-2026-04-05-0114"
+source = "git+https://github.com/verus-lang/verus.git#9c1e3bedad1c44db293ec36b7bad646a94eea421"
 dependencies = [
- "builtin",
- "builtin_macros",
- "state_machines_macros",
+ "proc-macro2",
+ "quote",
+ "syn",
+ "synstructure",
+ "verus_prettyplease",
+ "verus_syn",
+]
+
+[[package]]
+name = "verus_prettyplease"
+version = "0.0.0-2026-04-05-0114"
+source = "git+https://github.com/verus-lang/verus.git#9c1e3bedad1c44db293ec36b7bad646a94eea421"
+dependencies = [
+ "proc-macro2",
+ "verus_syn",
+]
+
+[[package]]
+name = "verus_state_machines_macros"
+version = "0.0.0-2026-04-05-0114"
+source = "git+https://github.com/verus-lang/verus.git#9c1e3bedad1c44db293ec36b7bad646a94eea421"
+dependencies = [
+ "indexmap",
+ "proc-macro2",
+ "quote",
+ "verus_syn",
+]
+
+[[package]]
+name = "verus_syn"
+version = "0.0.0-2026-04-05-0114"
+source = "git+https://github.com/verus-lang/verus.git#9c1e3bedad1c44db293ec36b7bad646a94eea421"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "unicode-ident",
+]
+
+[[package]]
+name = "vstd"
+version = "0.0.0-2026-04-05-0114"
+source = "git+https://github.com/verus-lang/verus.git#9c1e3bedad1c44db293ec36b7bad646a94eea421"
+dependencies = [
+ "verus_builtin",
+ "verus_builtin_macros",
+ "verus_state_machines_macros",
 ]

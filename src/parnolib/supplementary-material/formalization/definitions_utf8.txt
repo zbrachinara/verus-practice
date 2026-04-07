@@ -1,0 +1,517 @@
+(Unicode symbols: λ Γ ∀ ⟂ ⊔ ⊑ ∈ ∪)
+
+i: integer
+u: usage
+m: mode
+μ: mode and usage
+L: lifetime
+O: function callability
+t: type
+v: value
+e: expression
+d: datatype declaration
+D: datatype declarations
+
+i = ... | -2 | -1 | 0 | 1 | 2 | ...
+u = linear | shared
+m = spec | proof | exec
+μ = spec | proof u | exec u
+L = static | restricted
+O = Once | Many
+t = int | Unit | Never | permission(i -> t) | Option(S) | S | Fn[m O L] μ1 t1 -> μ2 t2
+v = i | () | ⟂ | permission(i -> v) | None(t) | Some(v: t) | S(v1, ..., vn) | λ[m O L] x: μx tx. eb
+e = x | i | e1 + e2 | () | ⟂ | default(t) | crash_never(e)
+  | hdata() | hread() | hwrite(e)
+  | permission(i -> v) | pdata(e) | pread(i @ e_perm) | pwrite(i := e_data @ e_perm)
+  | drop(e) | copy(e) | e1; e2 | let m x = e1 in e2
+  | None(t) | Some(e: t) | if let Some(x) = e1 then e2 else e3
+  | S(e1, ..., en) | let S(x1, ..., xn) = e0 in eb
+  | λ[m O L] x: μx tx. eb | e1 e2
+d = S -> (m1 t1, ..., mn tn)
+D = d1 ... dn
+
+h: heap value
+H: heap type
+P: permission types
+Γ: variable types
+ς: linearity checking laxity
+
+h = v
+H = t
+P = i1 -> u1, ..., in -> un
+Γ = x1 -> μ1 t1, ..., xn -> μn tn
+ς = strict | lax
+
+m |- t : L                             (type t has lifetime L when used with mode m)
+|- D                                   (well-formed datatype environment)
+D |- d                                 (well-formed datatype declaration)
+D ; Drec ; Dpos |- t                   (type t is well-formed, given positivity constraints Dpos)
+D |- t                                 (type t is well-formed)
+D ; m |- t : Copy                      (type t implements Rust Copy trait)
+D ; H ; P ; Γ ; m |ς- e : μ t          (well-typed expression e)
+D ; H ; P ; Γ ; m |- (h, e) : μ t      (well-typed state)
+(h, e) --> (h', e')                    (single-step evaluation)
+
+exec ⊑ proof ⊑ spec
+where ⊑ is reflexive and transitive
+Define m1 ⊔ m2 as:
+  m ⊔ spec = spec ⊔ m = spec
+  proof ⊔ proof = proof
+  m ⊔ exec = exec ⊔ m = m
+Define m1 ⊔ μ2 as:
+  spec ⊔ μ = m ⊔ spec = spec
+  proof ⊔ (m u) = proof u
+  exec ⊔ (m u) = m u
+
+mode_of(spec) = spec
+mode_of(proof u) = proof
+mode_of(exec u) = exec
+
+Define is_linear(μ) = true iff μ = m linear
+
+linear(P) = {i -> linear | i -> u ∈ P}
+shared(P) = {i -> shared | i -> u ∈ P}
+linear(Γ) = {x -> m linear t | x -> (m u) t ∈ Γ}
+shared(Γ) = {x -> m shared t | x -> (m u) t ∈ Γ}
+spec(Γ) = {x -> spec t | x -> μ t ∈ Γ}
+
+!P = {i -> shared | i -> shared ∈ P}
+¡P = {i -> linear | i -> linear ∈ P}
+!Γ = {x -> μ t | x -> μ t ∈ Γ AND NOT is_linear(μ)}
+¡Γ = {x -> μ t | x -> μ t ∈ Γ AND is_linear(μ)}
+P = P1 # P2 iff ¡P = ¡P1, ¡P2 AND !P = !P1 = !P2
+Γ = Γ1 # Γ2 iff ¡Γ = ¡Γ1, ¡Γ2 AND (!Γ, spec(¡Γ)) = (!Γ1, spec(¡Γ1)) = (!Γ2, spec(¡Γ2))
+
+Define is_static(Γ) if lifetime_of(t) = static for all x -> μ t in Γ
+
+Define is_unrestricted(μ, t) as true iff all of the following are true:
+  μ != m shared
+  mode_of(μ) |- t : static
+
+Define non_spec_function_modes(mf, μx, μb, tb) as true iff all of the following are true:
+  is_unrestricted(μb, tb)
+  mf != spec
+  mf ⊑ mode_of(μx)
+  mf ⊑ mode_of(μb)
+
+Define function_body_context(O, L, P, Γ, Pb, Γb, u)
+  IF O = Once AND L = restricted THEN Pb = P AND Γb = Γ
+  IF O = Many AND L = restricted THEN P = !P AND Γ = !Γ AND Pb = P AND Γb = Γ
+  IF O = Many AND L = static THEN P = !P AND Pb = {} AND Γ = !Γ AND Γb = spec(Γ)
+  IF O = Once AND L = static THEN Pb = ¡P AND Γb = ¡Γ, spec(!Γ) AND is_static(¡Γ)
+  IF O = Once THEN u = linear
+
+==================================================================================================
+
+RULES FOR |- t : L and m |- t : L
+
+Define
+  lifetime_of(int) = static
+  lifetime_of(Unit) = static
+  lifetime_of(Never) = static
+  lifetime_of(permission(i -> t)) = static
+  lifetime_of(Option(t)) = lifetime_of(t)
+  lifetime_of(S) = static
+  lifetime_of(Fn[m O L] μ1 t1 -> μ2 t2) = L
+
+|- t : lifetime_of(t)
+
+spec |- t : static
+
+m != spec
+-----------------------
+m |- t : lifetime_of(t)
+
+
+RULES FOR D ; Drec ; Dpos |- t
+
+D ; Drec ; Dpos |- int
+
+D ; Drec ; Dpos |- Unit
+
+D ; Drec ; Dpos |- Never
+
+D ; Drec ; Dpos |- t
+-------------------------------------
+D ; Drec ; Dpos |- permission(i -> t)
+
+D ; Drec, Dpos ; {} |- t
+----------------------------
+D ; Drec ; Dpos |- Option(t)
+
+D, Drec = ..., S -> (...), ...
+------------------------------
+D ; Drec ; Dpos |- S
+
+D ; Drec, Dpos ; {} |- t1
+D ; Drec, Dpos ; {} |- t2
+is_unrestricted(μ2, t2)
+----------------------------------------------
+D ; Drec ; Dpos |- Fn[exec O L] μ1 t1 -> μ2 t2
+
+D ; {} ; {} |- t1
+D ; Drec ; Dpos |- t2
+is_unrestricted(μ2, t2)
+proof ⊑ mode_of(μ1)
+proof ⊑ mode_of(μ2)
+-----------------------------------------------
+D ; Drec ; Dpos |- Fn[proof O L] μ1 t1 -> μ2 t2
+
+D ; {} ; {} |- t1
+D ; Drec ; Dpos |- t2
+----------------------------------------------------------
+D ; Drec ; Dpos |- Fn[spec Many static] spec t1 -> spec t2
+
+
+RULE FOR D |- d
+
+d = S -> (m1 t1, ..., mn tn)
+D ; {} ; d |- t1
+...
+D ; {} ; d |- tn
+m1 |- t1 : static
+...
+mn |- tn : static
+-----------------
+D |- d
+
+
+RULES FOR |- D
+
+|- {}
+
+|- D
+D |- d
+----------
+|- D, d
+
+
+
+RULES FOR D |- t
+
+D ; {} ; {} |- t
+----------------
+D |- t
+
+
+RULES FOR D ; m |- t : Copy
+
+D ; m |- int : Copy
+
+D ; m |- Unit : Copy
+
+D ; m |- Never : Copy
+
+D ; m |- t : Copy
+-------------------------
+D ; m |- Option(t) : Copy
+
+D = ..., S -> (m1 t1, ..., mn tn), ...
+D ; m1 |- t1 : Copy
+...
+D ; mn |- tn : Copy
+--------------------------------------
+D ; m |- S : Copy
+
+D ; m |- Fn[mf Many L] μ1 t1 -> μ2 t2 : Copy
+
+D ; spec |- t : Copy
+
+
+DEFINITION: D |- t defaults_to v
+
+D |- int defaults_to 0
+
+D |- Unit defaults_to ()
+
+D |- Never defaults_to ⟂
+
+D |- t defaults_to v
+------------------------------------------------------
+D |- permission(i -> t) defaults_to permission(i -> v)
+
+D |- Option(t) defaults_to None(t)
+
+D = ..., S -> (m1 t1, ..., mn tn), ...
+D |- t1 defaults_to v1
+...
+D |- tn defaults_to vn
+---------------------------------
+D |- S defaults_to S(v1, ..., vn)
+
+D |- Fn[m O L] μ1 t1 -> μ2 t2 defaults_to λ[m O L] x: μ1 t1. default(t2)
+
+==================================================================================================
+
+EVALUATION RULES: (h, e) --> (h, e')
+
+e -> e'
+-----------------
+(h, e) -> (h, e')
+
+(h, e) -> (h', e')
+------------------------
+(h, E[e]) --> (h', E[e'])
+
+E = [_]
+  | E1 + e2 | v1 + E2
+  | crash_never(E)
+  | hwrite(E)
+  | pdata(E)
+  | pread(i @ E)
+  | pwrite(i := E @ e_perm) | pwrite(i := v_val @ E)
+  | drop(E) | copy(E)
+  | E1; e2
+  | let m x = E1 in e2
+  | Some(E: t)
+  | if let Some(x) = E1 then e2 else e3
+  | S(v1, ..., vi, Ej, ek, ..., en)
+  | let S(x1, ..., xn) = E0 in eb
+  | E1 e2 | v1 E2
+
+i3 is the sum of i1 and i2
+--------------------------
+i1 + i2 -> i3
+
+D |- t defaults_to v
+--------------------
+default(t) -> v
+
+(h, hdata()) -> (h, h)
+
+(h, hread()) -> (h, h)
+
+(h, hwrite(v)) -> (v, ())
+
+pdata(permission(i -> v)) -> v
+
+pread(i @ permission(i -> v)) -> v
+
+pwrite(i := v' @ permission(i -> v)) -> permission(i -> v')
+
+drop(v) -> ()
+
+copy(v) -> v
+
+() ; e2 -> e2
+
+let m x = v1 in e2 -> e2[x := v1]
+
+if let Some(x) = None(t) then e2 else e3 -> e3
+
+if let Some(x) = Some(v: t) then e2 else e3 -> e2[x := v]
+
+let S(x1, ..., xn) = S(v1, ..., vn) in eb -> eb[x1 := v1, ..., xn := vn]
+
+(λ[m O L] x: μx tx. eb) vx -> eb[x := vx]
+
+(Note: crash_never(⟂) does not step.  By not stepping, it "crashes".)
+
+==================================================================================================
+TYPE/MODE RULES: D ; H ; P ; Γ ; m |ς- e : μ t
+
+spec(Γ) = spec(Γ')
+mode_of(μ) = mode_of(μ')
+D ; H ; P' ; Γ' ; m |lax- e : μ' t
+----------------------------------
+D ; H ; P ; Γ ; m |lax- e : μ t
+
+m ⊑ mode_of(μx)
+---------------------------------------------
+D ; H ; !P ; !Γ, x -> μx tx ; m |ς- x : μx tx
+
+D ; H ; !P ; !Γ, x -> mx shared tx ; m |ς- x : spec tx
+
+D ; H ; !P ; !Γ ; m |ς- i : μ int
+
+D ; H ; P1 ; Γ1 ; m |ς- e1 : μ int
+D ; H ; P2 ; Γ2 ; m |ς- e2 : μ int
+-------------------------------------------------
+D ; H ; P1 # P2 ; Γ1 # Γ2 ; m |ς- e1 + e2 : μ int
+
+D ; H ; !P ; !Γ ; m |ς- () : μ Unit
+
+D ; H ; !P ; !Γ ; m |ς- ⟂ : spec Never
+
+D |- t
+-------------------------------------------
+D ; H ; !P ; !Γ ; m |ς- default(t) : spec t
+
+D ; H ; P ; Γ ; m |ς- e : μ Never
+μ != spec
+---------------------------------------------
+D ; H ; P ; Γ ; m |ς- crash_never(e) : μ Unit
+
+D ; H ; !P ; !Γ ; exec |ς- hdata() : spec H
+
+D ; H ; !P ; !Γ ; exec |ς- hread() : exec linear H
+
+D ; H ; P ; Γ ; exec |ς- e : exec linear H
+-------------------------------------------
+D ; H ; P ; Γ ; exec |ς- hwrite(e) : μ Unit
+
+D ; H ; !P ; !Γ ; m |ς- v : exec linear t
+D ; exec |- t : Copy
+-------------------------------------------------------------------------------
+D ; H ; !P, i -> u ; !Γ ; m |ς- permission(i -> v) : proof u permission(i -> t)
+
+// Dummy rule: no pread/pwrite operations on spec permission(i -> t) type, so we omit i -> u
+D ; H ; !P ; !Γ ; m |ς- v : μ t
+-------------------------------------------------------------------
+D ; H ; !P; !Γ ; m |ς- permission(i -> v) : spec permission(i -> t)
+
+D ; H ; P ; Γ ; m |ς- e : spec permission(i -> t)
+-------------------------------------------------
+D ; H ; P ; Γ ; m |ς- pdata(e) : spec t
+
+D ; H ; P ; Γ ; exec |ς- e_perm : proof shared permission(i -> t)
+-----------------------------------------------------------------
+D ; H ; P ; Γ ; exec |ς- pread(i @ e_perm) : exec shared t
+
+D ; H ; P2 ; Γ2 ; exec |ς- e_perm : proof linear permission(i -> t)
+D ; H ; P1 ; Γ1 ; exec |ς- e_val : exec linear t'
+D ; exec |- t' : Copy
+---------------------------------------------------------------------------------------------------
+D ; H ; P1 # P2 ; Γ1 # Γ2 ; exec |ς- pwrite(i := e_val @ e_perm) : proof linear permission(i -> t')
+
+// Note: for simplicity, we prohibit dropping permissions (we're linear, not affine)
+D ; H ; P ; Γ ; m |ς- e : me linear t
+D ; me |- t : Copy
+----------------------------------------------
+D ; H ; P ; Γ ; m |ς- drop(e) : me shared Unit
+
+D ; H ; P ; Γ ; m |ς- e : me shared t
+D ; me |- t : Copy
+-------------------------------------------
+D ; H ; P ; Γ ; m |ς- copy(e) : me linear t
+
+D ; H ; P1, shared(Pb) ; Γ1, shared(Γb) ; m |ς- e1: μ1 Unit
+D ; H ; P2, linear(Pb) ; Γ2, linear(Γb) ; m |ς- e2: μ2 t2
+----------------------------------------------------------------------------
+D ; H ; (P1 # P2), linear(Pb) ; (Γ1 # Γ2), linear(Γb) ; m |ς- e1; e2 : μ2 t2
+
+D ; H ; P1, shared(Pb) ; Γ1, shared(Γb) ; m |ς- e1: μ1 t1
+D ; H ; P2, linear(Pb) ; Γ2, linear(Γb), x -> μ1 t1 ; m |ς- e2: μ2 t2
+is_unrestricted(μ1, t1) OR (Pb = {} AND Γb = {})
+mode_of(μ2) |- t2 : static
+m1 = mode_of(μ1)
+m ⊑ m1
+-----------------------------------------------------------------------------------------
+D ; H ; (P1 # P2), linear(Pb) ; (Γ1 # Γ2), linear(Γb) ; m |ς- let m1 x = e1 in e2 : μ2 t2
+
+D |- t
+---------------------------------------------
+D ; H ; !P ; !Γ ; m |ς- None(t) : μ Option(t)
+
+D ; H ; P ; Γ ; m |ς- e : μ t
+----------------------------------------------
+D ; H ; P ; Γ ; m |ς- Some(e: t) : μ Option(t)
+
+D ; H ; P1 ; Γ1 ; m |ς- e1 : μ1 Option(t1)
+D ; H ; Pb ; Γb, x -> μ1 t1 ; mb |ς- e2 : μb tb
+D ; H ; Pb ; Γb ; mb |ς- e3 : μb tb
+m ⊑ mb
+mode_of(μ1) ⊑ mb OR (mode_of(μ1) = spec AND mb = proof)
+---------------------------------------------------------------------------------
+D ; H ; (P1 # Pb) ; (Γ1 # Γb) ; m |ς- if let Some(x) = e1 then e2 else e3 : μb tb
+
+D = ..., S -> (m1 t1, ..., mn tn), ...
+D ; H ; P1 ; Γ1 ; m |ς- e1 : (m1 ⊔ μ) t1
+...
+D ; H ; Pn ; Γn ; m |ς- en : (mn ⊔ μ) tn
+------------------------------------------------------------------
+D ; H ; P1 # ... # Pn ; Γ1 # ... # Γn ; m |ς- S(e1, ..., en) : μ S
+
+D = ..., S -> (m1 t1, ..., mn tn), ...
+D ; H ; P0 ; Γ0 ; m |ς- e0 : μ0 S
+D ; H ; Pb ; Γb, x1: (m1 ⊔ μ0) t1, ..., xn: (mn ⊔ μ0) tn ; m |ς- eb: μb tb
+mode_of(μb) |- tb : static
+-----------------------------------------------------------------------
+D ; H ; P0 # Pb ; Γ0 # Γb ; m |ς- let S(x1, ..., xn) = e0 in eb : μb tb
+
+D ; H ; Pb ; Γb, x -> μx tx ; mf |ς- eb : μb tb
+D |- tx
+function_body_context(O, L, P, Γ, Pb, Γb, u)
+non_spec_function_modes(mf, μx, μb, tb)
+---------------------------------------------------------------------------------
+D ; H ; P ; Γ ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+
+// Dummy rule note: no spec operations on Fn[exec O L], Fn[proof O L] types, so we can relax linearity
+D ; H ; !P ; !Γ, x -> μx tx ; mf |lax- eb : μb tb
+D |- tx
+non_spec_function_modes(mf, μx, μb, tb)
+-----------------------------------------------------------------------------------
+D ; H ; !P ; !Γ ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+
+// Dummy rule note: no calls to shared Fn[mf Once L] functions, so we can relax linearity
+D ; H ; !P ; !Γ, x -> μx tx ; mf |lax- eb : μb tb
+D |- tx
+non_spec_function_modes(mf, μx, μb, tb)
+----------------------------------------------------------------------------------------------
+D ; H ; !P ; !Γ ; m |ς- (λ[mf Once L] x: μx tx. eb) : mf shared (Fn[mf Once L] μx tx -> μb tb)
+
+D ; H ; !P ; !Γ, x -> spec tx ; spec |ς- eb : spec tb
+D |- tx
+-------------------------------------------------------------------------------------------------------------
+D ; H ; !P ; !Γ ; m |ς- (λ[spec Many static] x: spec tx. eb) : spec (Fn[spec Many static] spec tx -> spec tb)
+
+IF O = Once THEN is_linear(μ1)
+D ; H ; P1 ; Γ1 ; m |ς- ef : μ1 (Fn[mf O L] μa ta -> μb tb)
+D ; H ; P2 ; Γ2 ; m |ς- ea : μa ta
+mode_of(μ1) ⊑ mf
+m ⊑ mf
+-----------------------------------------------
+D ; H ; P1 # P2 ; Γ1 # Γ2 ; m |ς- ef ea : μb tb
+
+==================================================================================================
+WELL-TYPED STATE: D ; H ; P ; Γ ; m |- (h, e) : μ t
+
+D ; H ; P ; Γ ; m |strict- e : μ t
+D ; H ; {} ; spec(Γ) ; exec |strict- h : exec linear H
+D ; exec |- H : Copy
+|- H : static
+------------------------------------------------------
+D ; H ; P ; Γ ; m |- (h, e) : μ t
+
+==================================================================================================
+TYPE/MODE RULES (same rules with more concise notation): C ; m |ς- e : μ t
+
+See definitions2_utf8.txt
+
+==================================================================================================
+
+Theorems
+
+Preservation
+If
+  |- D
+  D ; H ; P ; Γ ; m |- (h, e) : μ t
+  (h, e) --> (h', e')
+Then
+  D ; H ; P ; Γ ; m |- (h', e') : μ t
+
+Progress
+If
+  |- D
+  D ; H ; P ; {} ; m |- (h, e) : μ t
+  e is not a value v
+Then there is some (h', e') such that
+  (h, e) --> (h', e')
+
+Termination
+If
+  m ∈ {spec, proof}
+  |- D
+  D ; H ; P ; {} ; m |- (h0, e0) : μ t
+Then there is no infinite sequence (h1, e1) (h2, e2) (h3, e3) ... such that
+  (h0, e0) --> (h1, e1) --> (h2, e2) --> (h3, e3) --> ...
+
+Corollary: Call termination
+If
+  mf ∈ {spec, proof}
+  e0 = (λ[mf O L] x: μx tx. eb) va
+  |- D
+  D ; H ; P ; {} ; m |- (h0, e0) : μ t
+Then there is no infinite sequence (h1, e1) (h2, e2) (h3, e3) ... such that
+  (h0, e0) --> (h1, e1) --> (h2, e2) --> (h3, e3) --> ...
+

@@ -1,0 +1,2831 @@
+Notes:
+
+Define
+  as_shared(spec) = spec
+  as_shared(m u) = m shared
+
+If Γ = Γ1 # Γ2, then domain(Γ) = domain(Γ1) = domain(Γ2).
+(this is not true of P = P1 # P2, though.)
+
+We commonly use !(P1 # P2) = !P1 # !P2 = !P1 = !P2.
+Proof:
+  Let P = P1 # P2 and P' = !P1 # !P2
+  By definition of # for P = P1 # P2 we know ¡P = ¡P1, ¡P2 and !P = !P1 = !P2
+  By definition of # for P' = !P1 # !P2 we know ¡P' = ¡!P1, ¡!P2 and !P' = !!P1 = !!P2
+    simplifying: ¡P' = {} and !P' = !P1 = !P2
+    Since ¡P' = {}, all elements i -> u ∈ P' have u = shared
+    This implies that !P' = P'
+    So we can replace !P' = !P1 = !P2 with P' = !P1 = !P2
+  Since !P = !P1 = !P2 and P' = !P1 = !P2 we know !P = P' so !(P1 # P2) = !P1 # !P2
+
+We commonly use !(Γ1 # Γ2) = !Γ1 # !Γ2 = !Γ1 = !Γ2.
+Proof:
+  Let Γ = Γ1 # Γ2 and Γ' = !Γ1 # !Γ2
+  By definition of # for Γ = Γ1 # Γ2 we know ¡Γ = ¡Γ1, ¡Γ2 and
+    (!Γ, spec(¡Γ)) = (!Γ1, spec(¡Γ1)) = (!Γ2, spec(¡Γ2))
+  By definition of # for Γ' = !Γ1 # !Γ2 we know ¡Γ' = ¡!Γ1, ¡!Γ2 and
+    (!Γ', spec(¡Γ')) = (!!Γ1, spec(¡!Γ1)) = (!!Γ2, spec(¡!Γ2))
+  simplifying: ¡Γ' = {} and
+    (!Γ', spec(¡Γ')) = !Γ1 = !Γ2
+    !Γ' = !Γ1 = !Γ2
+  Since ¡Γ' = {}, all elements x -> μ t ∈ Γ' have !is_linear(μ)
+  This implies that !Γ' = Γ'
+  So we can replace !Γ' = !Γ1 = !Γ2 with Γ' = !Γ1 = !Γ2
+  Since !Γ = !Γ1 = !Γ2 and Γ' = !Γ1 = !Γ2 we know !Γ = Γ' so !(Γ1 # Γ2) = !Γ1 # !Γ2
+
+We commonly use (P1 # P2) # P3 = P1 # (P2 # P3).
+Proof:
+  Let Pa = P1 # P2 and Pb = P2 # P3
+  Let Px = Pa # P3 and Py = P1 # Pb
+  By definition of # for Pa = P1 # P2 we know !Pa = !P1 = !P2 and ¡Pa = ¡P1, ¡P2
+  By definition of # for Pb = P2 # P3 we know !Pa = !P2 = !P3 and ¡Pb = ¡P2, ¡P3
+  By definition of # for Px = Pa # P3 we know !Px = !Pa = !P3 and ¡Px = ¡Pa, ¡P3
+  By definition of # for Py = P1 # Pb we know !Py = !P1 = !Pb and ¡Py = ¡P1, ¡Pb
+  Combining these:
+    !Px = !Pa = !P1 = !P2 = !P3
+    !Py = !Pb = !P1 = !P2 = !P3
+    ¡Px = ¡Pa, ¡P3 = (¡P1, ¡P2), ¡P3
+    ¡Py = ¡P1, ¡Pb = ¡P1, (¡P2, ¡P3)
+  So Px = Py
+
+We commonly use (Γ1 # Γ2) # Γ3 = Γ1 # (Γ2 # Γ3).
+Proof:
+  Let Γa = Γ1 # Γ2 and Γb = Γ2 # Γ3
+  Let Γx = Γa # Γ3 and Γy = Γ1 # Γb
+  By definition of # for Γa = Γ1 # Γ2 we know ¡Γa = ¡Γ1, ¡Γ2 and
+    (!Γa, spec(¡Γa)) = (!Γ1, spec(¡Γ1)) = (!Γ2, spec(¡Γ2))
+  By definition of # for Γb = Γ2 # Γ3 we know ¡Γb = ¡Γ2, ¡Γ3 and
+    (!Γb, spec(¡Γb)) = (!Γ2, spec(¡Γ2)) = (!Γ3, spec(¡Γ3))
+  By definition of # for Γx = Γa # Γ3 we know ¡Γx = ¡Γa, ¡Γ3 and
+    (!Γx, spec(¡Γx)) = (!Γa, spec(¡Γa)) = (!Γ3, spec(¡Γ3))
+  By definition of # for Γy = Γ1 # Γb we know ¡Γy = ¡Γ1, ¡Γb and
+    (!Γy, spec(¡Γy)) = (!Γ1, spec(¡Γ1)) = (!Γb, spec(¡Γb))
+  Combining these:
+    ¡Γx = ¡Γa, ¡Γ3 = (¡Γ1, ¡Γ2), ¡Γ3
+    ¡Γy = ¡Γ1, ¡Γb = ¡Γ1, (¡Γ2, ¡Γ3)
+    (!Γx, spec(¡Γx)) = (!Γ1, spec(¡Γ1)) = (!Γ2, spec(¡Γ2)) = (!Γ3, spec(¡Γ3))
+    (!Γy, spec(¡Γy)) = (!Γ1, spec(¡Γ1)) = (!Γ2, spec(¡Γ2)) = (!Γ3, spec(¡Γ3))
+  So:
+    ¡Γx = ¡Γy
+    (!Γx, spec(¡Γx)) = (!Γy, spec(¡Γy))
+  So:
+    ¡Γx = ¡Γy
+    (!Γx, spec(¡Γx)) = (!Γy, spec(¡Γx))
+  So:
+    ¡Γx = ¡Γy
+    !Γx = !Γy
+  So Γx = Γy
+
+We commonly use (Γ1, spec(¡Γ3)) # (Γ2, ¡Γ3) = (Γ1 # Γ2), ¡Γ3
+Proof:
+  Let Γ = Γ1 # Γ2
+  Let Γ' = (Γ1, spec(¡Γ3)) # (Γ2, ¡Γ3)
+  By definition of # we know we know ¡Γ = ¡Γ1, ¡Γ2 and
+    (!Γ, spec(¡Γ)) = (!Γ1, spec(¡Γ1)) = (!Γ2, spec(¡Γ2))
+  By definition of # we know we know ¡Γ' = ¡(Γ1, spec(¡Γ3)), ¡(Γ2, ¡Γ3) and
+    (!Γ', spec(¡Γ')) = (!(Γ1, spec(¡Γ3)), spec(¡(Γ1, spec(¡Γ3)))) = (!(Γ2, ¡Γ3), spec(¡(Γ2, ¡Γ3)))
+  Simplifying:
+    ¡Γ' = ¡(Γ1, spec(¡Γ3)), ¡(Γ2, ¡Γ3)
+    ¡Γ' = ¡Γ1, ¡Γ2, ¡Γ3
+  Simplifying:
+    (!Γ', spec(¡Γ')) = (!(Γ1, spec(¡Γ3)), spec(¡(Γ1, spec(¡Γ3)))) = (!(Γ2, ¡Γ3), spec(¡(Γ2, ¡Γ3)))
+    (!Γ', spec(¡Γ')) = (!Γ1, spec(¡Γ3), spec(¡Γ1)) = (!Γ2, spec(¡Γ2), spec(¡Γ3))
+    (!Γ', spec(¡Γ1, ¡Γ2, ¡Γ3)) = (!Γ1, spec(¡Γ1), spec(¡Γ3)) = (!Γ2, spec(¡Γ2), spec(¡Γ3))
+    (!Γ', spec(¡Γ1), spec(¡Γ2), spec(¡Γ3)) = (!Γ1, spec(¡Γ1), spec(¡Γ3)) = (!Γ2, spec(¡Γ2), spec(¡Γ3))
+    (!Γ', spec(¡Γ1), spec(¡Γ2)) = (!Γ1, spec(¡Γ1)) = (!Γ2, spec(¡Γ2))
+    (!Γ', spec(¡Γ1), spec(¡Γ2)) = (!Γ, spec(¡Γ))
+    (!Γ', spec(¡Γ1, ¡Γ2)) = (!Γ, spec(¡Γ))
+    (!Γ', spec(¡Γ)) = (!Γ, spec(¡Γ))
+    !Γ' = !Γ
+  So !Γ' = !Γ and ¡Γ' = ¡Γ1, ¡Γ2, ¡Γ3
+
+We commonly use P = P1 # !P2 implies P = P1
+Proof:
+  By definition of # for P = P1 # !P2 we know ¡P = ¡P1, ¡!P2 and !P = !P1 = !!P2
+  Simplifying: ¡P = ¡P1 and !P = !P1
+  So P = P1
+
+We commonly use Γ = Γ1 # !Γ2 implies Γ = Γ1
+Proof:
+  By definition of # for Γ = Γ1 # !Γ2 we know ¡Γ = ¡Γ1, ¡!Γ2 and
+    (!Γ, spec(¡Γ)) = (!Γ1, spec(¡Γ1)) = (!Γ2, spec(¡!Γ2))
+  Simplifying: ¡Γ = ¡Γ1 and (!Γ, spec(¡Γ)) = (!Γ1, spec(¡Γ1)) = !Γ2
+  Simplifying: ¡Γ = ¡Γ1 and (!Γ, spec(¡Γ)) = (!Γ1, spec(¡Γ))
+  Simplifying: ¡Γ = ¡Γ1 and !Γ = !Γ1
+  So Γ = Γ1
+
+==================================================================================================
+THEOREMS
+==================================================================================================
+
+==================================================================================================
+Theorem: Preservation
+If
+  C = D ; H ; P ; Γ
+  |- D
+  C ; m |- (h, e) : μ t
+  (h, e) --> (h', e')
+Then
+  C ; m |- (h', e') : μ t
+
+By Lemma: Preservation expanded
+
+==================================================================================================
+Theorem: Progress
+If
+  C = D ; H ; P ; {}
+  |- D
+  C ; m |- (h, e) : μ t
+  e is not a value v
+Then there is some (h', e') such that
+  (h, e) --> (h', e')
+
+By Lemma: Progress expanded
+
+==================================================================================================
+Theorem: Termination
+See proofs_termination_utf8.txt
+
+==================================================================================================
+Corollary: Call termination
+See proofs_termination_utf8.txt
+
+==================================================================================================
+LEMMAS
+==================================================================================================
+
+==================================================================================================
+Lemma: Preservation expanded
+If
+  C = D ; H ; P ; Γ
+  |- D
+  C ; m |ς- e : μ t
+  D ; H ; {} ; spec(Γ) ; exec |ς- h : exec linear H
+  D ; exec |- H : Copy
+  |- H : static
+  (h, e) --> (h', e')
+  ς = strict
+Then
+  C ; m |ς- e' : μ t
+  D ; H ; {} ; spec(Γ) ; exec |ς- h' : exec linear H
+
+By induction on height of Ce ; m |ς- e : μ t
+
+Consider each possible case of (h, e) --> (h', e')
+
+NON-CONGRUENCE CASES
+
+CASE i1 + i2 -> i3
+  The only applicable typing rule for i1 + i2 with ς = strict is:
+    C1 ; m |ς- i1 : μ int
+    C2 ; m |ς- i2 : μ int
+    -------------------------------
+    C1 # C2 ; m |ς- i1 + i2 : μ int
+  The only applicable typing rules for i1 and i2 with ς = strict are:
+    !C1 ; m |ς- i1 : μ int
+    !C2 ; m |ς- i2 : μ int
+    where C1 = !C1 and C2 = !C2
+  Since C1 = !C1 and C2 = !C2 we know C1 # C2 = !C1 # !C2 = !(C1 # C2)
+  With this, we can apply the typing rule:
+    !(C1 # C2) ; m |ς- i3 : μ int
+  So:
+    C1 # C2 ; m |ς- i3 : μ int
+
+CASE default(t) -> v where D |- t defaults_to v
+  The only applicable typing rule for default(t) with ς = strict is:
+    !C |- t
+    ------------------------------
+    !C ; m |ς- default(t) : spec t
+  where C = !C
+  By Lemma: defaults_to typed:
+    !C ; m |ς- v : spec t
+
+CASE (h, hdata()) -> (h, h)
+  The only applicable typing rule for hdata() with ς = strict is:
+    !C ; exec |ς- hdata() : spec H
+  where !C = C and m = exec
+  We've assumed:
+    D ; H ; {} ; spec(Γ) ; exec |ς- h : exec linear H
+  By Lemma: Heap value:
+    D ; H ; P ; Γ ; exec |ς- h : exec linear H
+    !C ; exec |ς- h : exec linear H
+  By Lemma: Value as spec:
+    !C ; exec |ς- h : spec H
+
+CASE (h, hread()) -> (h, h)
+  The only applicable typing rule for hread() with ς = strict is:
+    !C ; exec |ς- hread() : exec linear H
+  where !C = C and m = exec
+  We've assumed:
+    D ; H ; {} ; spec(Γ) ; exec |ς- h : exec linear H
+  By Lemma: Heap value:
+    D ; H ; P ; Γ ; exec |ς- h : exec linear H
+    !C ; exec |ς- h : exec linear H
+
+CASE (h, hwrite(v)) -> (v, ())
+  The only applicable typing rule for hwrite(v) with ς = strict is:
+    C ; exec |ς- v : exec linear H
+    -------------------------------
+    C ; exec |ς- hwrite(v) : μ Unit
+  By Lemma: Heap value:
+    C = !C
+    D ; H ; {} ; spec(Γ) ; exec |ς- v : exec linear H
+  By typing for ():
+    !C ; exec |ς- () : μ Unit
+
+CASE pdata(permission(i -> v)) -> v
+  The only applicable typing rule for pdata(...) with ς = strict is:
+    C ; m |ς- permission(i -> v) : spec permission(i -> t)
+    ------------------------------------------------------
+    C ; m |ς- pdata(permission(i -> v)) : spec t
+  The only applicable typing rule for permission(i -> v): spec ... with ς = strict is:
+    !C ; m |ς- v : μ t
+    -------------------------------------------------------
+    !C ; m |ς- permission(i -> v) : spec permission(i -> t)
+  (Note: the other permission(i -> v) rule says permission(i -> v) : proof u ... and so doesn't match)
+  By Lemma: Value as spec:
+    !C ; m |ς- v : spec t
+
+CASE pread(i @ permission(i -> v)) -> v
+  The only applicable typing rule for pread(...) with ς = strict is:
+    C ; exec |ς- permission(i -> v) : proof shared permission(i -> t)
+    -----------------------------------------------------------------
+    C ; exec |ς- pread(i @ permission(i -> v)) : exec shared t
+  where m = exec
+  The only applicable typing rule for permission(i -> v) : proof shared ... with ς = strict is:
+    !C ; m |ς- v : exec linear t
+    C ; exec |- t : Copy
+    ----------------------------------------------------------------------------
+    !C, i -> shared ; m |ς- permission(i -> v) : proof shared permission(i -> t)
+  (Note: the other permission(i -> v) rule says permission(i -> v) : spec ... and so doesn't match)
+  By Lemma: Copy value:
+    !C ; m |ς- v : exec shared t
+
+CASE pwrite(i := v' @ permission(i -> v)) -> permission(i -> v')
+  The only applicable typing rule for pwrite(...) with ς = strict is:
+    C2 ; exec |ς- permission(i -> v) : proof linear permission(i -> t)
+    C1 ; exec |ς- v' : exec linear t'
+    C1 ; exec |- t' : Copy
+    ------------------------------------------------------------------------------------------
+    C1 # C2 ; exec |ς- pwrite(i := v' @ permission(i -> v)) : proof linear permission(i -> t')
+  where m = exec
+  The only applicable typing rule for permission(i -> v) : proof linear ... with ς = strict is:
+    !C2' ; m |ς- v : exec linear t
+    C2' ; exec |- t : Copy
+    ------------------------------------------------------------------------------
+    !C2', i -> linear ; m |ς- permission(i -> v) : proof linear permission(i -> t)
+  where C2 = !C2', i -> linear
+  (Note: the other permission(i -> v) rule says permission(i -> v) : spec ... and so doesn't match)
+  By Lemma: Value shared nonlinear, C1 = !C1, so:
+    C = C1 # C2 = !C1 # !C2 = !C2 = C2 = !C2', i -> linear
+  So:
+    !C2 ; exec |ς- v' : exec linear t'
+  By typing:
+    !C2' ; exec |ς- v' : exec linear t'
+    C2' ; exec |- t' : Copy
+    -----------------------------------------------------------------------------------
+    !C2', i -> linear ; exec |ς- permission(i -> v') : proof linear permission(i -> t')
+  So:
+    C ; exec |ς- permission(i -> v') : proof linear permission(i -> t')
+
+CASE drop(v) -> ()
+  The only applicable typing rule for drop(v) with ς = strict is:
+    C ; m |ς- v : mv linear t
+    C ; mv |- t : Copy
+    ----------------------------------
+    C ; m |ς- drop(v) : mv shared Unit
+  By Lemma: Value shared nonlinear, C = !C.
+  By typing for ():
+    !C ; m |ς- () : μ Unit
+
+CASE copy(v) -> v
+  The only applicable typing rule for copy(v) with ς = strict is:
+    C ; m |ς- v : mv shared t
+    C ; mv |- t : Copy
+    -------------------------------
+    C ; m |ς- copy(v) : mv linear t
+  By Lemma: Copy value:
+    C ; m |ς- v : mv linear t
+
+CASE () ; e2 -> e2
+  The only applicable typing rule for () ; e2 with ς = strict is:
+    C1, shared(Cb) ; m |ς- (): μ1 Unit
+    C2, linear(Cb) ; m |ς- e2: μ2 t2
+    --------------------------------------------
+    (C1 # C2), linear(Cb) ; m |ς- e1; e2 : μ2 t2
+  The only applicable typing rule for () with ς = strict is:
+    !C1' ; m |ς- () : μ Unit
+  where !C1' = C1, shared(Cb)
+  So C1 = !C1
+  So C1 # C2 = !C1 # C2 = C2
+  So rewrite
+    C2, linear(Cb) ; m |ς- e2: μ2 t2
+  as:
+    (C1 # C2), linear(Cb) ; m |ς- e2: μ2 t2
+
+CASE let m x = v1 in e2 -> e2[x := v1]
+  The only applicable typing rule for let m x = v1 in e2 with ς = strict is:
+    C1, shared(Cb) ; m |ς- v1: μ1 t1
+    C2, linear(Cb), x -> μ1 t1 ; m |ς- e2: μ2 t2
+    is_unrestricted(μ1, t1) OR (Cb = D ; H ; {} ; {})
+    mode_of(μ2) |- t2 : static
+    m1 = mode_of(μ1)
+    m ⊑ m1
+    ---------------------------------------------------------
+    (C1 # C2), linear(Cb) ; m |ς- let m1 x = v1 in e2 : μ2 t2
+  If !is_unrestricted(μ1, t1), then Cb = D ; H ; {} ; {}, so spec(Cb) = shared(Cb), so:
+    C1, spec(Cb) ; m |ς- v1: μ1 t1
+  If is_unrestricted(μ1, t1), then by Lemma: Value nonsharing:
+    C1, spec(Cb) ; m |ς- v1: μ1 t1
+  Let Cv = C1, spec(Cb)
+  Let Ce = C2, linear(Cb)
+  C = (C1 # C2), linear(Cb) = (C1, spec(Cb)) # (C2, linear(Cb)) = Ce # Cv
+  So:
+    Cv ; m |ς- v1: μ1 t1
+    Ce, x -> μ1 t1 ; m |ς- e2: μ2 t2
+    C = Ce # Cv
+  By Lemma: Single substitution:
+    C ; m |ς- e2[x := v1] : μ2 t2
+
+CASE if let Some(x) = None(t1) then e2 else e3 -> e3
+  The only applicable typing rule for if let Some(x) = None(t1) then e2 else e3 with ς = strict is:
+    C1 ; m |ς- None(t) : μ1 Option(t1)
+    Cb, x: μ1 t1 ; mb |ς- e2 : μb tb
+    Cb ; mb |ς- e3 : μb tb
+    m ⊑ mb
+    mode_of(μ1) ⊑ mb OR (mode_of(μ1) = spec AND mb = proof)
+    -----------------------------------------------------------------
+    C1 # Cb ; m |ς- if let Some(x) = None(t1) then e2 else e3 : μb tb
+  The only applicable typing rule for None(t) with ς = strict is:
+    !C1 |- t1
+    -----------------------------------
+    !C1 ; m |ς- None(t1) : μ Option(t1)
+  where C1 = !C1, which means C1 # Cb = !C1 # Cb = Cb, so:
+    C1 # Cb ; mb |ς- e3 : μb tb
+  By Lemma: Mode weakening:
+    C1 # Cb ; m |ς- e3 : μb tb
+
+CASE if let Some(x) = Some(v1: t1) then e2 else e3 -> e2[x := v1]
+  The only applicable typing rule for if let Some(x) = Some(v1: t1) then e2 else e3 with ς = strict is:
+    C1 ; m |ς- Some(v1: t1) : μ1 Option(t1)
+    Cb, x -> μ1 t1 ; mb |ς- e2 : μb tb
+    Cb ; mb |ς- e3 : μb tb
+    m ⊑ mb
+    mode_of(μ1) ⊑ mb OR (mode_of(μ1) = spec AND mb = proof)
+    ---------------------------------------------------------------------
+    C1 # Cb ; m |ς- if let Some(x) = Some(v1: t1) then e2 else e3 : μb tb
+  The only applicable typing rule for Some(v1: t1) with ς = strict is:
+    C1 ; m |ς- v1 : μ1 t1
+    ---------------------------------------
+    C1 ; m |ς- Some(v1: t1) : μ1 Option(t1)
+  By Lemma: Mode weakening:
+    Cb, x -> μ1 t1 ; b |ς- e2 : μb tb
+  So:
+    C1 ; m |ς- v1 : μ1 t1
+    Cb, x -> μ1 t1 ; b |ς- e2 : μb tb
+    C = Cb # C1
+  By Lemma: Single substitution:
+    C ; m |ς- e2[x := v1] : μb tb
+
+CASE let S(x1, ..., xn) = S(v1, ..., vn) in eb -> eb[x1 := v1, ..., xn := vn]
+  The only applicable typing rule for let S(x1, ..., xn) = S(v1, ..., vn) in eb with ς = strict is:
+    C0 # Cb = ..., S -> (m1 t1, ..., mn tn), ...; ... ; ...
+    C0 ; m |ς- S(v1, ..., vn) : μ0 S
+    Cb, x1: (m1 ⊔ μ0) t1, ..., xn: (mn ⊔ μ0) tn ; m |ς- eb: μb tb
+    mode_of(μb) |- tb : static
+    -----------------------------------------------------------------
+    C0 # Cb ; m |ς- let S(x1, ..., xn) = S(v1, ..., vn) in eb : μb tb
+  The only applicable typing rule for S(v1, ..., vn) with ς = strict is:
+    C1 # ... # Cn = ..., S -> (m1 t1, ..., mn tn), ... ; ... ; ... ; ...
+    C1 ; m |ς- v1 : (m1 ⊔ μ0) t1
+    ...
+    Cn ; m |ς- vn : (mn ⊔ μ0) tn
+    -------------------------------------------
+    C1 # ... # Cn ; m |ς- S(v1, ..., vn) : μ0 S
+  where C0 = C1 # ... # Cn
+  Let μ1 = m1 ⊔ μ0, ..., μn = mn ⊔ μ0
+  We have:
+    C1 ; m |ς- v1 : μ1 t1
+    ...
+    Cn ; m |ς- vn : μn tn
+    Cb, x1 -> μ1 t1, ..., xn -> μn tn ; m |ς- eb : μb tb
+    C = Cb # C1 # ... # Cn
+  By Lemma: Substitution:
+    C ; m |ς- eb[x1 := v1 ... xn := vn] : μb tb
+
+CASE (λ[m O L] x: μx tx. eb) vx -> eb[x := vx]
+  The only applicable typing rule for (λ[m O L] x: μx tx. eb) vx with ς = strict is:
+    IF O = Once THEN is_linear(μf)
+    Cf ; m |ς- vf : μf (Fn[mf O L] μx tx -> μb tb)
+    Cv ; m |ς- vx : μx tx
+    mode_of(μf) ⊑ mf
+    m ⊑ mf
+    ----------------------------------------------------------------
+    Cf # Cv ; m |ς- vf vx : μb tb
+  where C = Cf # Cv
+  where vf = λ[m O L] x: μx tx. eb
+  There are four applicable typing rules for λ[m O L] x: μx tx. eb with ς = strict.
+  CASE 1
+      D ; H ; Pb ; Γb, x -> μx tx ; mf |ς- eb : μb tb
+      D |- tx
+      function_body_context(O, L, Pf, Γf, Pb, Γb, u)
+      non_spec_function_modes(mf, μx, μb, tb)
+      -----------------------------------------------------------------------------------
+      D ; H ; Pf ; Γf ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+    where Cf = D ; H ; Pf ; Γf
+    By Lemma: Function body weakening:
+      D ; H ; Pf ; Γf, x -> μx tx ; mf |ς- eb : μb tb
+    We know m ⊑ mf from above, so by Lemma: Mode weakening:
+      D ; H ; Pf ; Γf, x -> μx tx ; m |ς- eb : μb tb
+    So we have:
+      Cv ; m |ς- vx : μx tx
+      Cf, x -> μx tx ; m |ς- eb : μb tb
+      C = Cf # Cv
+    By Lemma: Single substitution:
+      C ; m |ς- eb[x := vx] : μb tb
+  CASE 2
+      !Cf, x -> μx tx ; mf |lax- eb : μb tb
+      !Cf |- tx
+      non_spec_function_modes(mf, μx, μb, tb)
+      -----------------------------------------------------------------------
+      !Cf ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+    where μf = spec so by mode_of(μf) ⊑ mf we know spec ⊑ mf, which means mf = spec
+    But non_spec_function_modes says mf != spec, which contradicts mf = spec
+    Therefore, this case cannot happen
+  CASE 3
+      !Cf, x -> μx tx ; mf |lax- eb : μb tb
+      !Cf |- tx
+      non_spec_function_modes(mf, μx, μb, tb)
+      ----------------------------------------------------------------------------------
+      !Cf ; m |ς- (λ[mf Once L] x: μx tx. eb) : mf shared (Fn[mf Once L] μx tx -> μb tb)
+    where μf = mf shared
+    From "IF O = Once THEN is_linear(μf)" above, we know is_linear(μf)
+    However, is_linear(mf shared) is false, so this case cannot happen
+  CASE 4
+      !Cb, x -> spec tx ; spec |ς- eb : spec tb
+      !Cf |- tx
+      function_body_context(Many, static, !Cf, !Cb, shared)
+      -------------------------------------------------------------------------------------------------
+      !Cf ; m |ς- (λ[spec Many static] x: spec tx. eb) : spec (Fn[spec Many static] spec tx -> spec tb)
+    where Cf = !Cf
+    where μx = spec
+    where μb = spec
+    By Lemma: Function body weakening:
+      !Cf, x -> spec tx ; spec |ς- eb : spec tb
+    By Lemma: Mode weakening:
+      !Cf, x -> spec tx ; m |ς- eb : spec tb
+    So we have:
+      Cv ; m |ς- vx : spec tx
+      Cf, x -> spec tx ; m |ς- eb : spec tb
+      C = Cf # Cv
+    By Lemma: Single substitution:
+      C ; m |ς- eb[x := vx] : spec tb
+
+CONGRUENCE CASES
+
+CASE (h, e1 + e2) --> (h', e1' + e2) where (h, e1) --> (h', e1') via E = E1 + e2
+  The only applicable typing rule for e1 + e2 with ς = strict is:
+    C1 ; m |ς- e1 : μ int
+    C2 ; m |ς- e2 : μ int
+    -------------------------------
+    C1 # C2 ; m |ς- e1 + e2 : μ int
+  By induction on e1:
+    C1 ; m |ς- e1' : μ int
+    D ; H ; {} ; spec(Γ) ; exec |ς- h' : exec linear H
+  By typing rule:
+    C1 # C2 ; m |ς- e1' + e2 : μ int
+
+CASE (h, e1; e2) --> (h', e1'; e2) where (h, e1) --> (h', e1') via E = E1; e2
+  The only applicable typing rule for e1; e2 with ς = strict is:
+    C1, shared(Cb) ; m |ς- e1: μ1 Unit
+    C2, linear(Cb) ; m |ς- e2: μ2 t2
+    --------------------------------------------
+    (C1 # C2), linear(Cb) ; m |ς- e1; e2 : μ2 t2
+  By induction on e1:
+    C1, shared(Cb) ; m |ς- e1': μ1 Unit
+    D ; H ; {} ; spec(Γ) ; exec |ς- h' : exec linear H
+  By typing rule:
+    (C1 # C2), linear(Cb) ; m |ς- e1'; e2 : μ2 t2
+
+CASE (h, ef ea) --> (h', ef' ea) where (h, ef) --> (h', ef') via E = Ef; ea
+  The only applicable typing rule for ef ea with ς = strict is:
+    IF O = Once THEN is_linear(μ1)
+    C1 ; m |ς- ef : μ1 (Fn[mf O L] μa ta -> μb tb)
+    C2 ; m |ς- ea : μa ta
+    mode_of(μ1) ⊑ mf
+    m ⊑ mf
+    ----------------------------------------------------------------
+    C1 # C2 ; m |ς- ef ea : μb tb
+  By induction on ef:
+    C1 ; m |ς- ef' : μ1 (Fn[mf O L] μa ta -> μb tb)
+    D ; H ; {} ; spec(Γ) ; exec |ς- h' : exec linear H
+  By typing rule:
+    C1 # C2 ; m |ς- ef' ea : μb tb
+
+Other congruence cases are similar
+
+==================================================================================================
+Lemma: Progress expanded
+If
+  C = D ; H ; P ; {}
+  |- D
+  C ; m |ς- e : μ t
+  e is not a value v
+  ς = strict
+Then there is some (h', e') such that
+  (h, e) --> (h', e')
+
+By induction on Ce ; m |ς- e : μ t
+
+CASE e = e1 + e2
+    C1 ; m |ς- e1 : μ int
+    C2 ; m |ς- e2 : μ int
+    -------------------------------
+    C1 # C2 ; m |ς- e1 + e2 : μ int
+  CASE e1 is not a value
+    By induction on e1, (h, e1) --> (h', e1')
+    e steps via E = E1 + e2
+  CASE e1 = v1, e2 is not a value
+    By induction on e2, (h, e2) --> (h', e2')
+    e steps via E = v1 + E2
+  CASE e1 = v1, e2 = v2
+    By Lemma: Canonical forms, v1 = i1 and v2 = i2
+    e steps via i1 + i2 -> i3
+
+CASE e = default(t)
+    !C |- t
+    ------------------------------
+    !C ; m |ς- default(t) : spec t
+  By Lemma: defaults_to exists: there is a v such that D |- t defaults_to v
+  e steps via:
+    D |- t defaults_to v
+    --------------------
+    default(t) -> v
+
+CASE e = crash_never(e1)
+    C ; m |ς- e1 : μ Never
+    μ != spec
+    ----------------------------------
+    C ; m |ς- crash_never(e1) : μ Unit
+  CASE e1 is not a value
+    By induction on e1, (h, e1) --> (h', e1')
+    e steps via E = crash_never(E)
+  CASE e1 = v1
+    By Lemma: Canonical forms, v1 = ⟂
+    The only applicable typing rule for ⟂ is:
+      !C ; m |ς- ⟂ : spec Never
+    This rule implies μ = spec, which contradicts our assumption μ != spec.
+    Therefore, this case cannot happen (which is good, because there's no evaluation rule for crash_never(v)).
+
+CASE e = hdata()
+    !C ; exec |ς- hdata() : spec H
+  e steps via (h, hdata()) -> (h, h)
+
+CASE e = hread()
+    !C ; exec |ς- hread() : exec linear H
+  e steps via (h, hread()) -> (h, h)
+
+CASE e = hwrite(e1)
+    C ; exec |ς- e1 : exec linear H
+    --------------------------------
+    C ; exec |ς- hwrite(e1) : μ Unit
+  CASE e1 is not a value
+    By induction on e1, (h, e1) --> (h', e1')
+    e steps via E = hwrite(E)
+  CASE e1 = v1
+    e steps via (h, hwrite(v1)) -> (v1, ())
+
+CASE e = pdata(e1)
+    C ; m |ς- e1 : spec permission(i -> t)
+    --------------------------------------
+    C ; m |ς- pdata(e1) : spec t
+  CASE e1 is not a value
+    By induction on e1, (h, e1) --> (h', e1')
+    e steps via E = pdata(E)
+  CASE e1 = v1
+    By Lemma: Canonical forms, v1 = permission(i -> v1')
+    e steps via pdata(permission(i -> v1')) -> v1'
+
+CASE e = pread(i @ e1)
+    C ; exec |ς- e1 : proof shared permission(i -> t)
+    -------------------------------------------------
+    C ; exec |ς- pread(i @ e1) : exec shared t
+  CASE e1 is not a value
+    By induction on e1, (h, e1) --> (h', e1')
+    e steps via E = pread(i @ E)
+  CASE e1 = v1
+    By Lemma: Canonical forms, v1 = permission(i -> v1')
+    e steps via pread(i @ permission(i -> v1')) -> v1'
+
+CASE e = pwrite(i := e1 @ e2)
+    C2 ; exec |ς- e2 : proof linear permission(i -> t)
+    C1 ; exec |ς- e1 : exec linear t'
+    C1 ; exec |- t' : Copy
+    --------------------------------------------------------------------------
+    C1 # C2 ; exec |ς- pwrite(i := e1 @ e2) : proof linear permission(i -> t')
+  CASE e1 is not a value
+    By induction on e1, (h, e1) --> (h', e1')
+    e steps via E = pwrite(i := E @ e2)
+  CASE e1 = v1, e2 is not a value
+    By induction on e2, (h, e2) --> (h', e2')
+    e steps via E = pwrite(i := v1 @ E)
+  CASE e1 = v1, e2 = v2
+    By Lemma: Canonical forms, v2 = permission(i -> v2')
+    e steps via pwrite(i := v1 @ permission(i -> v2')) -> permission(i -> v1)
+
+CASE e = drop(e1)
+    C ; m |ς- e1 : me linear t
+    C ; me |- t : Copy
+    -----------------------------------
+    C ; m |ς- drop(e1) : me shared Unit
+  CASE e1 is not a value
+    By induction on e1, (h, e1) --> (h', e1')
+    e steps via E = drop(E)
+  CASE e1 = v1
+    e steps via drop(v1) -> ()
+
+CASE e = copy(e1)
+    C ; m |ς- e1 : me shared t
+    C ; me |- t : Copy
+    --------------------------------
+    C ; m |ς- copy(e1) : me linear t
+  CASE e1 is not a value
+    By induction on e1, (h, e1) --> (h', e1')
+    e steps via E = copy(E)
+  CASE e1 = v1
+    e steps via copy(v1) -> v1
+
+CASE e = e1; e2
+    C1, shared(Cb) ; m |ς- e1: μ1 Unit
+    C2, linear(Cb) ; m |ς- e2: μ2 t2
+    --------------------------------------------
+    (C1 # C2), linear(Cb) ; m |ς- e1; e2 : μ2 t2
+  CASE e1 is not a value
+    By induction on e1, (h, e1) --> (h', e1')
+    e steps via E = E1; e2
+  CASE e1 = v1
+    By Lemma: Canonical forms, v1 = ()
+    e steps via () ; e2 -> e2
+
+CASE e = let m1 x = e1 in e2
+    C1, shared(Cb) ; m |ς- e1: μ1 t1
+    C2, linear(Cb), x -> μ1 t1 ; m |ς- e2: μ2 t2
+    ...
+    ---------------------------------------------------------
+    (C1 # C2), linear(Cb) ; m |ς- let m1 x = e1 in e2 : μ2 t2
+  CASE e1 is not a value
+    By induction on e1, (h, e1) --> (h', e1')
+    e steps via E = let m x = E1 in e2
+  CASE e1 = v1
+    e steps via let m x = v1 in e2 -> e2[x := v1]
+
+CASE e = Some(e1: t1)
+    C ; m |ς- e1 : μ t1
+    -------------------------------------
+    C ; m |ς- Some(e1: t1) : μ Option(t1)
+  CASE e1 is not a value
+    By induction on e1, (h, e1) --> (h', e1')
+    e steps via E = Some(E: t)
+  CASE e1 = v1
+    Some(v1: t1) is a value, which contradicts "e is not a value v", so this case can't happen
+
+CASE e = if let Some(x) = e1 then e2 else e3
+    C1 ; m |ς- e1 : μ1 Option(t1)
+    Cb, x -> μ1 t1 ; mb |ς- e2 : μb tb
+    Cb ; mb |ς- e3 : μb tb
+    m ⊑ mb
+    mode_of(μ1) ⊑ mb OR (mode_of(μ1) = spec AND mb = proof)
+    -----------------------------------------------------------
+    C1 # Cb ; m |ς- if let Some(x) = e1 then e2 else e3 : μb tb
+  CASE e1 is not a value
+    By induction on e1, (h, e1) --> (h', e1')
+    e steps via E = if let Some(x) = E1 then e2 else e3
+  CASE e1 = v1
+    By Lemma: Canonical forms, v1 = None(t1') or v1 = Some(v1': t1')
+    In the first case, e steps via if let Some(x) = None(t1') then e2 else e3 -> e3
+    In the second case, e steps via if let Some(x) = Some(v1': t') then e2 else e3 -> e2[x := v1']
+
+CASE e = S(e1, ..., en)
+    C1 # ... # Cn = ..., S -> (m1 t1, ..., mn tn), ... ; ... ; ... ; ...
+    C1 ; m |ς- e1 : (m1 ⊔ μ) t1
+    ...
+    Cn ; m |ς- en : (mn ⊔ μ) tn
+    ------------------------------------------
+    C1 # ... # Cn ; m |ς- S(e1, ..., en) : μ S
+  CASE e = S(v1, ..., vi, ej, ek, ..., en)
+    By induction on ej, (h, ej) --> (h', ej')
+    e steps via E = S(v1, ..., vi, Ej, ek, ..., en)
+  CASE e = S(v1, ..., vn)
+    S(v1, ..., vn) is a value, which contradicts "e is not a value v", so this case can't happen
+
+CASE e = let S(x1, ..., xn) = e0 in eb
+    C0 # Cb = ..., S -> (m1 t1, ..., mn tn), ...; ... ; ...
+    C0 ; m |ς- e0 : μ0 S
+    Cb, x1: (m1 ⊔ μ0) t1, ..., xn: (mn ⊔ μ0) tn ; m |ς- eb: μb tb
+    mode_of(μb) |- tb : static
+    -------------------------------------------------------------
+    C0 # Cb ; m |ς- let S(x1, ..., xn) = e0 in eb : μb tb
+  CASE e0 is not a value
+    By induction on e0, (h, e0) --> (h', e0')
+    e steps via E = let S(x1, ..., xn) = E0 in eb
+  CASE e0 = v0
+    By Lemma: Canonical forms, v0 = S(v1, ..., vn)
+    e steps via let S(x1, ..., xn) = S(v1, ..., vn) in eb -> eb[x1 := v1, ..., xn := vn]
+
+CASE e = ef ea
+    ...
+    C1 ; m |ς- ef : μ1 (Fn[mf O L] μa ta -> μb tb)
+    C2 ; m |ς- ea : μa ta
+    ...
+    ----------------------------------------------------------------
+    C1 # C2 ; m |ς- ef ea : μb tb
+  CASE ef is not a value
+    By induction on ef, (h, ef) --> (h', ef')
+    e steps via E = E1 e2
+  CASE ef = vf, ea is not a value
+    By induction on ea, (h, ea) --> (h', ea')
+    e steps via E = v1 E2
+  CASE ef = vf, ea = va
+    By Lemma: Canonical forms, vf = λ[mf O L] x: μa ta. eb
+    e steps via (λ[mf O L] x: μa ta. eb) va -> eb[x := va]
+
+==================================================================================================
+Lemma: Substitution
+
+If
+  C1 ; m |ς- v1 : μ1 t1
+  ...
+  Cn ; m |ς- vn : μn tn
+  C0, x1 -> μ1 t1, ..., xn -> μn tn ; m |ς- e0 : μ0 t0
+  C = C0 # C1 # ... # Cn
+Then
+  C ; m |ς- e0[x1 := v1 ... xn := vn] : μ0 t0
+
+(We assume alpha-renaming so that x1...xn cannot appear in C0.
+Since the domain of C1...Cn is the same as the domain of C0,
+x1...xn can't appear free in v1...vn.)
+
+By induction on n, repeatedly using Lemma: Single substitution.
+Base case n = 0 trivial
+Induction case:
+  C0, x1 -> μ1 t1, ..., xn -> μn tn ; m |ς- e0 : μ0 t0
+  (C0, x1 -> μ1 t1), x2 -> μ2 t2, ..., xn -> μn tn ; m |ς- e0 : μ0 t0
+  CASE is_linear(μ1)
+    Let C0' = C0, x1 -> μ1 t1
+    Let C2' = C2, x1 -> spec t1
+    ...
+    Let Cn' = Cn, x1 -> spec t1
+    C0', x2 -> μ2 t2, ..., xn -> μn tn ; m |ς- e0 : μ0 t0
+    By Lemma: Weakening:
+      C2' ; m |ς- v2 : μ2 t2
+      ...
+      Cn' ; m |ς- vn : μn tn
+    Let C' = C0' # C2' # ... # Cn' = (C0 # C2 # ... # Cn), x1 -> μ1 t1
+    By induction:
+      C' ; m |ς- e0[x2 := v2 ... xn := vn] : μ0 t0
+  CASE !is_linear(μ1)
+    Let C0' = C0, x1 -> μ1 t1
+    Let C2' = C2, x1 -> μ1 t1
+    ...
+    Let Cn' = Cn, x1 -> μ1 t1
+    C0', x2 -> μ2 t2, ..., xn -> μn tn ; m |ς- e0 : μ0 t0
+    By Lemma: Weakening:
+      C2' ; m |ς- v2 : μ2 t2
+      ...
+      Cn' ; m |ς- vn : μn tn
+    Let C' = C0' # C2' # ... # Cn' = (C0 # C2 # ... # Cn), x1 -> μ1 t1
+    By induction:
+      C' ; m |ς- e0[x2 := v2 ... xn := vn] : μ0 t0
+  In both cases:
+    C1 ; m |ς- v1 : μ1 t1
+    (C0 # C2 # ... # Cn), x1 -> μ1 t1 ; m |ς- e0[x2 := v2 ... xn := vn] : μ0 t0
+    C = (C0 # C2 # ... # Cn) # C1
+  By Lemma: Single substitution:
+    C ; m |ς- e0[x2 := v2 ... xn := vn][x1 := v1] : μ0 t0
+  (See comments above about alpha-renaming.)
+    C ; m |ς- e0[x1 := v1 ... xn := vn] : μ0 t0
+
+==================================================================================================
+Lemma: Single substitution
+
+If
+  Cv ; m |ς- v : μx tx
+  Ce, x -> μx tx ; m |ς- e : μe te
+  C = Ce # Cv
+Then
+  C ; m |ς- e[x := v] : μe te
+
+If ς = strict, this follows directly from Lemma: Single substitution simplified
+
+If ς = lax, then:
+  Let Cv' = nonlinear(Cv).
+  By laxity typing rule:
+    spec(Cv') = spec(Cv)
+    mode_of(μ) = mode_of(μ')
+    Cv ; m |lax- v : μx tx
+    ----------------------------
+    Cv' ; m |lax- v : μx tx
+  Let C' = Ce # Cv', so:
+    Cv' ; m |lax- v : μx tx
+    Ce, x -> μx tx ; m |ς- e : μe te
+    C' = Ce # Cv'
+  By Lemma: Single substitution simplified:
+    C' ; m |lax- e[x := v] : μe te
+  By laxity typing rule:
+    spec(C) = spec(C')
+    mode_of(μ) = mode_of(μ')
+    C' ; m |lax- e[x := v] : μe te
+    ------------------------------
+    C ; m |lax- e[x := v] : μe te
+
+==================================================================================================
+Lemma: Single substitution simplified
+
+If
+  Cv ; m |ς- v : μx tx
+  Ce, x -> μx tx ; m |ς- e : μe te
+  C = Ce # Cv
+  if ς = lax then Cv = !Cv
+Then
+  C ; m |ς- e[x := v] : μe te
+
+By induction on Ce, x -> μx tx ; m |- e: μe te
+
+CASE laxity rule
+  Typing rule:
+    spec(Ce, x -> μx tx) = spec(C')
+    mode_of(μ) = mode_of(μe')
+    C' ; m |lax- e : μe' te
+    -----------------------------------
+    Ce, x -> μx tx ; m |lax- e : μe te
+  where C = Ce, x -> μx tx
+  Let C' = Ce', x -> μx' tx where spec(Ce) = spec(Ce'), so:
+    Ce', x -> μx' tx ; m |lax- e : μe' te
+  Choose Cev' and Cv' so that spec(Cv') = spec(Cv) and Cev' = Ce' # Cv'
+  By typing rule:
+    spec(Cv') = spec(Cv)
+    mode_of(μx') = mode_of(μx)
+    Cv ; m |lax- v : μx tx
+    ----------------------------
+    Cv' ; m |lax- v : μx' tx
+  By induction:
+    Cev' ; m |lax- e[x := v] : μe' te
+  By typing rule:
+    spec(C) = spec(Cev')
+    mode_of(μe) = mode_of(μe')
+    Cev' ; m |lax- e[x := v] : μe' te
+    ---------------------------------
+    C ; m |lax- e[x := v] : μe te
+
+CASE e = x' typing rule #1 (x' : μx' tx')
+  CASE x = x'
+    By typing rule:
+      m ⊑ mode_of(μx)
+      --------------------------------
+      !C', x -> μx tx ; m |ς- x : μx tx
+      Ce = !C'
+      μe te = μx tx
+    C = Ce # Cv = !C' # Cv
+    By Lemma: Combine nonlinear, C = Cv
+    We know Cv ; m |ς- v : μx tx, so
+      C ; m |ς- v : μx tx
+      C ; m |ς- e[x := v] : μe te
+  CASE x != x'
+    By typing rule:
+      m ⊑ mode_of(μx')
+      --------------------------------------
+      !C', x' -> μx' tx' ; m |ς- x' : μx' tx'
+      Ce, x -> μx tx = !C', x' -> μx' tx'
+      μe te = μx' tx'
+    So x -> μx tx appears in !C'
+    So !is_linear(μx)
+    We know Cv = !Cv by ς = lax or by Lemma: Value shared nonlinear on Cv ; m |ς- v : μx tx
+    Define !C'' such that !C'', x -> μx tx = !C'
+    Then Ce = !C'', x' -> μx' tx'
+    C = Ce # Cv = (!C'', x' -> μx' tx') # !Cv
+    Define !C''' such that C = Ce # Cv = !C''', x' -> μx' tx'
+    By typing rule:
+      !C''', x' -> μx' tx' ; m |ς- x' : μx' tx'
+    Simplifying:
+      C ; m |ς- x' : μx' tx'
+      C ; m |ς- x' : μe te
+
+CASE e = x' typing rule #2 (x' : spec tx')
+  CASE x = x'
+    By typing rule:
+      !C, x -> mx shared tx ; m |ς- x : spec tx
+      Ce = !C'
+      μx = mx shared
+      μe te = spec tx
+    C = Ce # Cv = !C' # Cv
+    By Lemma: Combine nonlinear, C = Cv
+    We know Cv ; m |ς- v : μx tx, so
+      C ; m |ς- v : mx shared tx
+    By Lemma: Value as spec:
+      C ; m |ς- v : spec tx
+    Since μe te = spec tx:
+      C ; m |ς- v : μe te
+  CASE x != x'
+    By typing rule:
+      !C, x' -> mx' shared tx' ; m |ς- x' : spec tx'
+      Ce, x -> μx tx = !C', x' -> mx' shared tx'
+      μe te = spec tx'
+    So x -> μx tx appears in !C'
+    So !is_linear(μx)
+    We know Cv = !Cv by ς = lax or by Lemma: Value shared nonlinear on Cv ; m |ς- v : μx tx
+    Define !C'' such that !C'', x -> μx tx = !C'
+    Then Ce = !C'', x' -> mx' shared tx'
+    C = Ce # Cv = (!C'', x' -> mx' shared tx') # !Cv
+    Define !C''' such that C = Ce # Cv = !C''', x' -> mx' shared tx'
+    By typing rule:
+      !C''', x' -> mx' shared tx' ; m |ς- x' : spec tx'
+    Simplifying:
+      C ; m |ς- x' : spec tx'
+      C ; m |ς- x' : μe te
+
+CASE e = i
+  By typing rule (!C ; m |ς- i : μ int):
+    !Ce, x -> μx tx ; m |ς- i: μe int
+    !is_linear(μx)
+  We know Cv = !Cv by ς = lax or by Lemma: Value shared nonlinear on Cv ; m |ς- v : μx tx
+  So C = Ce # Cv = !Ce # !Cv = !(Ce # Cv) = !C
+  By typing rule:
+    !C ; m |ς- i : μe int
+
+CASE e = e1 + e2
+  By typing rule:
+    C1 ; m |ς- e1 : m' μ int
+    C2 ; m |ς- e2 : m' μ int
+    ------------------------------
+    C1 # C2 ; m |ς- e1 + e2 : μ int
+    Ce, x -> μx tx = C1 # C2
+    μe te = μ int
+  CASE is_linear(μx)
+    CASE x -> μx tx in C1
+      Let C1 = C1', x -> μx tx, so:
+        C1', x -> μx tx ; m |ς- e1 : μ int
+      By induction:
+        C1' # Cv ; m |ς- e1[x := v] : μ int
+      By definition of C1 # C2 we know C2 contains x -> spec tx
+      By Lemma: Linear value as spec:
+        !Cv, spec(¡Cv) ; m |ς- v : spec tx
+      Let C2 = C2', x -> spec tx, so:
+        C2', x -> spec tx ; m |ς- e2 : μ int
+      By induction:
+        C2' # (!Cv, spec(¡Cv)) ; m |ς- e2[x := v] : μ int
+      Putting the induction results together:
+        C1' # Cv ; m |ς- e1[x := v] : μ int
+        C2' # (!Cv, spec(¡Cv)) ; m |ς- e2[x := v] : μ int
+      By typing rule:
+        (C1' # Cv) # (C2' # (!Cv, spec(¡Cv))) ; m |ς- e1[x := v] + e2[x := v] : μ int
+      Rearranging:
+        (C1' # C2') # (Cv # (!Cv, spec(¡Cv))) ; m |ς- (e1 + e2)[x := v] : μ int
+        Ce # Cv ; m |ς- (e1 + e2)[x := v] : μ int
+        C ; m |ς- e[x := v] : μe te
+    CASE x -> mx ux tx in C2
+      similar to C1 case
+  CASE !is_linear(μx)
+    By the definition of C1 # C2, we know x -> μx tx in C1 and x -> μx tx in C2
+    Let C1 = C1', x -> μx tx and
+    Let C2 = C2', x -> μx tx, so:
+      C1', x -> μx tx ; m |ς- e1 : μ int
+      C2', x -> μx tx ; m |ς- e2 : μ int
+    By induction:
+      C1' # Cv ; m |ς- e1[x := v] : μ int
+      C2' # Cv ; m |ς- e2[x := v] : μ int
+    By typing rule:
+      (C1' # Cv) # (C2' # Cv) ; m |ς- e1[x := v] + e2[x := v] : μ int
+    We know Cv = !Cv by ς = lax or by Lemma: Value shared nonlinear on Cv ; m |ς- v : μx tx
+    Rearranging:
+      (C1' # C2') # (!Cv # !Cv) ; m |ς- (e1 + e2)[x := v] : μ int
+      Ce # !Cv ; m |ς- (e1 + e2)[x := v] : μ int
+      C ; m |ς- e[x := v] : μe te
+
+CASE e = e1; e2
+    C1, shared(Cb) ; m |ς- e1: μ1 Unit
+    C2, linear(Cb) ; m |ς- e2: μe te
+    -------------------------------------------
+    (C1 # C2), linear(Cb) ; m |ς- e1; e2 : μe te
+    Ce, x -> μx tx = (C1 # C2), linear(Cb)
+  CASE x -> μx tx in C1 # C2
+    Let Cv = Cv_, spec(Cb):
+      Cv_, spec(Cb) ; m |ς- v : μx tx
+    By Lemma: Weakening:
+      Cv_, shared(Cb) ; m |ς- v : μx tx
+    CASE !is_linear(μx)
+      Let C1 = C1_, x -> μx tx
+        Cv_, shared(Cb) ; m |ς- v : μx tx
+        C1_, shared(Cb), x -> μx tx ; m |ς- e1: μ1 Unit
+        Cv1 = (C1_, shared(Cb)) # (Cv_, shared(Cb))
+      By induction:
+        (C1_, shared(Cb)) # (Cv_, shared(Cb)) ; m |ς- e1[x := v] : μ1 Unit
+        (C1_ # Cv_), shared(Cb) ; m |ς- e1[x := v] : μ1 Unit
+      Let C2 = C2_, x -> μx tx
+        Cv_, spec(Cb) ; m |ς- v : μx tx
+        C2_, linear(Cb), x -> μx tx ; m |ς- e2: μe te
+        Cv2 = (C2_, linear(Cb)) # (Cv_, spec(Cb))
+      By induction:
+        (C2_, linear(Cb)) # (Cv_, spec(Cb)) ; m |ς- e2[x := v] : μe te
+        (C2_ # Cv_), linear(Cb) ; m |ς- e2[x := v] : μe te
+      We know Cv = !Cv by ς = lax or by Lemma: Value shared nonlinear on Cv ; m |ς- v : μx tx, so:
+        (C1_ # !Cv_), shared(Cb) ; m |ς- e1[x := v] : μ1 Unit
+        (C2_ # !Cv_), linear(Cb) ; m |ς- e2[x := v] : μe te
+      By typing:
+        (C1_ # !Cv_) # (C2_ # !Cv_), linear(Cb) ; m |ς- (e1; e2)[x := v] : μe te
+        ((C1_ # C2_) # Cv_), linear(Cb) ; m |ς- (e1; e2)[x := v] : μe te
+        ((C1_ # C2_), linear(Cb)) # Cv ; m |ς- (e1; e2)[x := v] : μe te
+        Ce # Cv ; m |ς- (e1; e2)[x := v] : μe te
+    CASE is_linear(μx) and x is linear in C1
+      Let C1 = C1_, x -> μx tx
+        Cv_, shared(Cb) ; m |ς- v : μx tx
+        C1_, shared(Cb), x -> μx tx ; m |ς- e1: μ1 Unit
+        Cv1 = (C1_, shared(Cb)) # (Cv_, shared(Cb))
+      By induction:
+        (C1_, shared(Cb)) # (Cv_, shared(Cb)) ; m |ς- e1[x := v] : μ1 Unit
+        (C1_ # Cv_), shared(Cb) ; m |ς- e1[x := v] : μ1 Unit
+      By Lemma: Linear value as spec:
+        !Cv, spec(¡Cv) ; m |ς- v : spec tx
+        !Cv_, spec(¡Cv_), spec(Cb) ; m |ς- v : spec tx
+      Let C2 = C2_, x -> spec tx
+        C2_, linear(Cb), x -> spec tx ; m |ς- e2: μe te
+        Cv2 = (C2_, linear(Cb)) # (!Cv_, spec(¡Cv_), spec(Cb))
+      By induction:
+        (C2_, linear(Cb)) # (!Cv_, spec(¡Cv_), spec(Cb)) ; m |ς- e2[x := v]: μe te
+        (C2_ # (!Cv_, spec(¡Cv_))), linear(Cb) ; m |ς- e2[x := v]: μe te
+        (C2_ # (!Cv_, spec(¡Cv_))), linear(Cb) ; m |ς- e2[x := v]: μe te
+      By typing:
+        (C1_ # Cv_) # (C2_ # (!Cv_, spec(¡Cv_))), linear(Cb) ; m |ς- (e1; e2)[x := v]: μe te
+        (C1_ # C2_) # (Cv_ # (!Cv_, spec(¡Cv_))), linear(Cb) ; m |ς- (e1; e2)[x := v]: μe te
+        ((C1_ # C2_) # Cv_), linear(Cb) ; m |ς- (e1; e2)[x := v]: μe te
+        ((C1_ # C2_), linear(Cb)) # Cv ; m |ς- (e1; e2)[x := v]: μe te
+        Ce # Cv ; m |ς- (e1; e2)[x := v]: μe te
+    CASE is_linear(μx) and x is linear in C2
+      By Lemma: Linear value as spec:
+        !Cv, spec(¡Cv) ; m |ς- v : spec tx
+        !Cv_, spec(¡Cv_), spec(Cb) ; m |ς- v : spec tx
+      By Lemma: Weakening:
+        !Cv_, spec(¡Cv_), shared(Cb) ; m |ς- v : spec tx
+      Let C1 = C1_, x -> spec tx
+        C1_, shared(Cb), x -> spec tx ; m |ς- e1: μ1 Unit
+        Cv1 = (C1_, shared(Cb)) # (!Cv_, spec(¡Cv_), shared(Cb))
+      By induction:
+        (C1_, shared(Cb)) # (!Cv_, spec(¡Cv_), shared(Cb)) ; m |ς- e1[x := v]: μ1 Unit
+        (C1_ # (!Cv_, spec(¡Cv_))), shared(Cb) ; m |ς- e1[x := v]: μ1 Unit
+      Let C2 = C2_, x -> μx tx
+        Cv_, spec(Cb) ; m |ς- v : μx tx
+        C2_, linear(Cb), x -> μx tx ; m |ς- e2: μe te
+        Cv2 = (C2_, linear(Cb)) # (Cv_, spec(Cb))
+      By induction:
+        (C2_, linear(Cb)) # (Cv_, spec(Cb)) ; m |ς- e2[x := v]: μe te
+        (C2_ # Cv_), linear(Cb) ; m |ς- e2[x := v]: μe te
+      By typing:
+        (C1_ # (!Cv_, spec(¡Cv_))) # (C2_ # Cv_), linear(Cb) ; m |ς- (e1; e2)[x := v]: μ1 Unit
+        (C1_ # C2_) # ((!Cv_, spec(¡Cv_)) # Cv_), linear(Cb) ; m |ς- (e1; e2)[x := v]: μ1 Unit
+        (C1_ # C2_) # Cv_, linear(Cb) ; m |ς- (e1; e2)[x := v]: μ1 Unit
+        ((C1_ # C2_), linear(Cb)) # (Cv_, spec(Cb)) ; m |ς- (e1; e2)[x := v]: μ1 Unit
+        Ce # Cv ; m |ς- (e1; e2)[x := v]: μ1 Unit
+  CASE x -> μx tx in linear(Cb)
+    We know is_linear(μx)
+    Let linear(Cb) = Cb', x -> μx tx, so for e2:
+      C2, linear(Cb', x -> μx tx) ; m |ς- e2: μe te
+      C2, linear(Cb'), x -> μx tx ; m |ς- e2: μe te
+    Ce = (C1 # C2), linear(Cb')
+    We know C = Ce # Cv = ((C1 # C2), linear(Cb')) # Cv
+    Let C1 = C1_, spec(¡Cv)
+    Let C2 = C2_, spec(¡Cv)
+    Let !Cv = !Cv_, spec(Cb')
+    By induction for e2:
+      (C2, linear(Cb')) # Cv ; m |ς- e2[x := v] : μe te
+    We can rewrite the induction result for e2 as:
+      (C2, linear(Cb')) # (!Cv, ¡Cv) ; m |ς- e2[x := v] : μe te
+      (C2_, spec(¡Cv), linear(Cb')) # (!Cv_, spec(Cb'), ¡Cv) ; m |ς- e2[x := v] : μe te
+      (C2_, linear(Cb'), spec(¡Cv)) # (!Cv_, spec(Cb'), ¡Cv) ; m |ς- e2[x := v] : μe te
+      ((C2_, linear(Cb')) # (!Cv_, spec(Cb')), ¡Cv ; m |ς- e2[x := v] : μe te
+      (C2_ # !Cv_), linear(Cb'), ¡Cv ; m |ς- e2[x := v] : μe te
+    By Lemma: Value sharing on Cv ; m |ς- v : μx tx, we know:
+      !Cv, shared(¡Cv) ; m |ς- v : as_shared(μx) tx
+    Using Cb' for e1:
+      C1, shared(Cb', x -> μx tx) ; m |ς- e1: μ1 Unit
+      C1, shared(Cb'), x -> as_shared(μx) tx ; m |ς- e1: μ1 Unit
+    To use induction on e1, we would (naively) want to form (C1, shared(Cb')) # (!Cv, shared(¡Cv))
+    But (C1, shared(Cb')) and (!Cv, shared(¡Cv)) don't quite fit together yet:
+      - if x' -> m' linear t' ∈ linear(Cb'), then x' -> spec t' ∈ Cv, and we'll need x' -> m' shared t' ∈ Cv
+      - if x' -> m' linear t' ∈ ¡Cv, then x' -> spec t' ∈ C1, and we'll need x' -> m' shared t' ∈ C1
+    Let !Cv' = !Cv_, shared(Cb')
+    Let C1' = C1_, shared(¡Cv)
+    By Lemma: Weakening:
+      !Cv', shared(¡Cv) ; m |ς- v : as_shared(μx) tx
+    By Lemma: Weakening:
+      C1', shared(Cb'), x -> as_shared(μx) tx ; m |ς- e1: μ1 Unit
+    By induction on e1:
+      (C1', shared(Cb')) # (!Cv', shared(¡Cv)) ; m |ς- e1[x := v]: μ1 Unit
+    We can rewrite the induction result for e1 as:
+      (C1_, shared(¡Cv), shared(Cb')) # (!Cv_, shared(Cb'), shared(¡Cv)) ; m |ς- e1[x := v]: μ1 Unit
+      (C1_, shared(Cb', ¡Cv)) # (!Cv_, shared(Cb', ¡Cv)) ; m |ς- e1[x := v]: μ1 Unit
+      (C1_ # !Cv_), shared(Cb', ¡Cv) ; m |ς- e1[x := v]: μ1 Unit
+    By typing rule:
+      (C1_ # !Cv_), shared(Cb', ¡Cv) ; m |ς- e1[x := v]: μ1 Unit
+      (C2_ # !Cv_), linear(Cb', ¡Cv) ; m |ς- e2[x := v] : μe te
+      -------------------------------------------------------------------------------------
+      ((C1_ # !Cv_) # (C2_ # !Cv_)), linear(Cb', ¡Cv) ; m |ς- e1[x := v]; e2[x := v] : μe te
+    Rearranging:
+      ((C1_ # C2_) # (!Cv_ # !Cv_)), linear(Cb'), ¡Cv ; m |ς- e[x := v] : μe te
+      ((C1_ # C2_) # !Cv_), linear(Cb'), ¡Cv ; m |ς- e[x := v] : μe te
+      (((C1_ # C2_), linear(Cb')) # (!Cv_, spec(Cb'))), ¡Cv ; m |ς- e[x := v] : μe te
+      ((C1_ # C2_), linear(Cb'), spec(¡Cv)) # (!Cv_, spec(Cb'), ¡Cv) ; m |ς- e[x := v] : μe te
+      ((C1 # C2), linear(Cb')) # Cv ; m |ς- e[x := v] : μe te
+      Ce # Cv ; m |ς- e[x := v] : μe te
+      C ; m |ς- e[x := v] : μe te
+
+CASE e = (λ[mf O L] x: μx tx. eb), main rule
+    Cb, x' -> μx' tx' ; mf |ς- eb : μb tb
+    D |- tx'
+    function_body_context(O, L, C0, Cb, u)
+    non_spec_function_modes(mf, μx', μb, tb)
+    ---------------------------------------------------------------------------
+    C0 ; m |ς- (λ[mf O L] x': μx' tx'. eb) : mf u (Fn[mf O L] μx' tx' -> μb tb)
+  where μe te = mf u (Fn[mf O L] μx' tx' -> μb tb)
+  where C0 = Ce, x -> μx tx
+  Let C0 = D ; H ; P0 ; Γ0
+  CASE L = restricted: Pb = P0 AND Γb = Γ0
+    C = Ce # Cv
+    Let C' = C, x' -> μx' tx'
+    Let Ce' = Ce, x' -> μx' tx'
+    Let Cv' such that C' = Ce' # Cv'
+    Cv ; m |ς- v : μx tx
+    By Lemma: Weakening:
+      Cv' ; m |ς- v : μx tx
+    Rewriting using Cb = C0 = Ce, x -> μx tx:
+      Cb, x' -> μx' tx' ; mf |ς- eb : μb tb
+      (Ce, x' -> μx' tx'), x -> μx tx ; mf |ς- eb : μb tb
+      Ce', x -> μx tx ; mf |ς- eb : μb tb
+    By induction:
+      Ce' # Cv' ; mf |ς- eb[x := v] : μb tb
+      (Ce, x' -> μx' tx') # Cv' ; mf |ς- eb[x := v] : μb tb
+      (Ce # Cv), x' -> μx' tx' ; mf |ς- eb[x := v] : μb tb
+    By typing rule:
+      Ce # Cv ; m |ς- (λ[mf O L] x': μx' tx'. eb)[x := v] : mf u (Fn[mf O L] μx' tx' -> μb tb)
+  CASE O = Many AND L = static: P0 = !P0 AND Pb = {} AND Γ0 = !Γ0 AND Γb = spec(Γ0)
+    C0 = !C0
+    Because !C0 = Ce, x -> μx tx we know !is_linear(μx)
+    We know Cv = !Cv by ς = lax or by Lemma: Value shared nonlinear on Cv ; m |ς- v : μx tx
+    By Lemma: Value/env as spec:
+      spec(Cv) ; m |ς- v : spec tx
+    So C = Ce # Cv = !Ce # !Cv = !(Ce # Cv) = !C
+    Let Ce' = Ce, x' -> μx' tx'
+    Let Cv' = spec(Cv), x' -> μx' tx'
+    By Lemma: Weakening:
+      Cv' ; m |ς- v : spec tx
+    Let Cb_ such that Cb = Cb_, x -> spec tx
+    Rewriting:
+      Cb, x' -> μx' tx' ; mf |ς- eb : μb tb
+      (Cb_, x -> spec tx), x' -> μx' tx' ; mf |ς- eb : μb tb
+      (Cb_, x' -> μx' tx'), x -> spec tx ; mf |ς- eb : μb tb
+    By induction:
+      (Cb_, x' -> μx' tx') # Cv' ; mf |ς- eb[x := v] : μb tb
+      (Cb_ # spec(Cv)), x' -> μx' tx' ; mf |ς- eb[x := v] : μb tb
+    By typing rule:
+      Ce # Cv ; m |ς- (λ[mf O L] x': μx' tx'. eb)[x := v] : mf u (Fn[mf O L] μx' tx' -> μb tb)
+  CASE O = Once AND L = static: Pb = ¡P0 AND Γb = ¡Γ0, spec(!Γ0) and is_static(¡Γ0) and u = linear
+    CASE is_linear(μx)
+      x is in ¡Γ0, not in spec(!Γ0)
+      Since is_static(¡Γ0), we know lifetime_of(tx) = static
+      This means that is_unrestricted(μx, tx), so by Lemma: Value nonsharing:
+        ¡Cv, spec(!Cv) |ς- v : spec tx
+      Let Cv' = ¡Cv, spec(!Cv), x' -> μx' tx'
+      By Lemma: Weakening:
+        Cv' ; m |ς- v : μx tx
+      Let Cb_ such that Cb = Cb_, x -> μx tx
+      Rewriting:
+        Cb, x' -> μx' tx' ; mf |ς- eb : μb tb
+        (Cb_, x -> μx tx), x' -> μx' tx' ; mf |ς- eb : μb tb
+        (Cb_, x' -> μx' tx'), x -> μx tx ; mf |ς- eb : μb tb
+      By induction:
+        (Cb_, x' -> μx' tx') # Cv' ; mf |ς- eb[x := v] : μb tb
+        (Cb_ # (¡Cv, spec(!Cv))), x' -> μx' tx' ; mf |ς- eb[x := v] : μb tb
+      By typing rule:
+        Ce # Cv ; m |ς- (λ[mf O L] x': μx' tx'. eb)[x := v] : mf u (Fn[mf O L] μx' tx' -> μb tb)
+    CASE !is_linear(μx)
+      x is in spec(!Γ0), not in ¡Γ0
+      We know Cv = !Cv by ς = lax or by Lemma: Value shared nonlinear on Cv ; m |ς- v : μx tx
+      By Lemma: Value/env as spec:
+        spec(Cv) ; m |ς- v : spec tx
+      Let Cv' = spec(!Cv), x' -> μx' tx'
+      By Lemma: Weakening:
+        Cv' ; m |ς- v : spec tx
+      Let Cb_ such that Cb = Cb_, x -> μx tx
+      Rewriting:
+        Cb, x' -> μx' tx' ; mf |ς- eb : μb tb
+        (Cb_, x -> μx tx), x' -> μx' tx' ; mf |ς- eb : μb tb
+        (Cb_, x' -> μx' tx'), x -> μx tx ; mf |ς- eb : μb tb
+      By induction:
+        (Cb_, x' -> μx' tx') # Cv' ; mf |ς- eb[x := v] : μb tb
+        (Cb_ # spec(!Cv)), x' -> μx' tx' ; mf |ς- eb[x := v] : μb tb
+      By typing rule:
+        Ce # Cv ; m |ς- (λ[mf O L] x': μx' tx'. eb)[x := v] : mf u (Fn[mf O L] μx' tx' -> μb tb)
+
+CASE e = (λ[mf O L] x': μx' tx'. eb), dummy spec rule
+    !C0, x' -> μx' tx' ; mf |lax- eb : μb tb
+    !C0 |- tx'
+    non_spec_function_modes(mf, μx', μb, tb)
+    ----------------------------------------------------------------------------
+    !C0 ; m |ς- (λ[mf O L] x': μx' tx'. eb) : spec (Fn[mf O L] μx' tx' -> μb tb)
+  where μe te = spec (Fn[mf O L] μx' tx' -> μb tb)
+  where !C0 = Ce, x -> μx tx
+  This tells us Ce = !Ce
+  Because !C0 = Ce, x -> μx tx we know !is_linear(μx)
+  We know Cv = !Cv by ς = lax or by Lemma: Value shared nonlinear on Cv ; m |ς- v : μx tx
+  So C = Ce # Cv = !Ce # !Cv = !(Ce # Cv) = !C
+  Let Ce' = Ce, x' -> μx' tx'
+  So:
+    Ce', x -> μx tx ; mf |lax- eb : μb tb
+  If !is_linear(μx'), let Cv' = Cv, x' -> μx' tx'
+  If is_linear(μx'), let Cv' = Cv, x' -> spec tx'
+  By Lemma: Weakening on Cv ; m |ς- v : μx tx:
+    Cv' ; m |ς- v : μx tx
+  By Lemma: As lax:
+    Cv' ; m |lax- v : μx tx
+  Let C' = C, x' -> μx' tx' = Ce' # Cv'
+  By induction:
+    C' ; mf |lax- eb[x := v] : μb tb
+  Rewriting:
+    C, x' -> μx' tx' ; mf |lax- eb[x := v] : μb tb
+    !C, x' -> μx' tx' ; mf |lax- eb[x := v] : μb tb
+  By typing rule (dummy spec rule):
+    !C, x' -> μx' tx' ; mf |lax- eb[x := v] : μb tb
+    !C |- tx'
+    non_spec_function_modes(mf, μx', μb, tb)
+    -------------------------------------------------------------------------------------
+    !C ; m |ς- (λ[mf O L] x': μx' tx'. eb[x := v]) : spec (Fn[mf O L] μx' tx' -> μb tb)
+  Rewriting:
+    C ; m |ς- (λ[mf O L] x': μx' tx'. eb)[x := v] : spec (Fn[mf O L] μx' tx' -> μb tb)
+
+Other cases are similar.
+
+==================================================================================================
+Lemma: Canonical forms
+
+If
+  C ; m |ς- v : μ t
+  ς = strict
+Then
+  if t = int then v = i
+  if t = Unit then v = ()
+  if t = Never then v = ⟂
+  if t = permission(i -> t') then v = permission(i -> v')
+  if t = Option(t') then v = None(t') or v1 = Some(v': t')
+  if t = S then v = S(v1, ..., vn)
+  if t = Fn[m O L] μx tx -> μb tb then v = λ[m O L] x: μx tx. eb
+
+Proof by cases of C ; m |ς- v : μ t
+Here are all the typing rules that can conclude C ; m |ς- v : μ t when ς = strict:
+
+CASE v = i
+  !C ; m |ς- i : μ int
+  t = int
+
+case v = ()
+  !C ; m |ς- () : μ Unit
+  t = Unit
+
+case v = ⟂
+  !C ; m |ς- ⟂ : spec Never
+  t = Never
+
+case v = permission(i -> v)
+  first rule:
+    ...
+    --------------------------------------------------------------------
+    !C, i -> u ; m |ς- permission(i -> v') : proof u permission(i -> t')
+    t = permission(i -> t')
+  second rule:
+    ...
+    --------------------------------------------------------
+    !C ; m |ς- permission(i -> v') : spec permission(i -> t')
+    t = permission(i -> t')
+
+case v = None(t')
+  !C |- t'
+  ----------------------------------
+  !C ; m |ς- None(t') : μ Option(t')
+
+case v = Some(v': t')
+  C ; m |ς- e : μ t'
+  -------------------------------------
+  C ; m |ς- Some(v': t') : μ Option(t')
+
+case v = S(v1, ..., vn)
+  ...
+  ------------------------------------------
+  C1 # ... # Cn ; m |ς- S(v1, ..., vn) : μ S
+  t = S
+
+case v = λ[mf O L] x: μx tx. eb
+  first rule:
+    ...
+    ---------------------------------------------------------------------------------
+    D ; H ; P ; Γ ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+    t = Fn[mf O L] μx tx -> μb tb
+  second rule:
+    ...
+    ----------------------------------------------------------------------
+    !C ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+    t = Fn[mf O L] μx tx -> μb tb
+  third rule:
+    ...
+    ---------------------------------------------------------------------------------
+    !C ; m |ς- (λ[mf Once L] x: μx tx. eb) : mf shared (Fn[mf Once L] μx tx -> μb tb)
+    t = Fn[mf Once L] μx tx -> μb tb = Fn[mf O L] μx tx -> μb tb
+  fourth rule:
+    ...
+    ------------------------------------------------------------------------------------------------
+    !C ; m |ς- (λ[spec Many static] x: spec tx. eb) : spec (Fn[spec Many static] spec tx -> spec tb)
+    t = Fn[spec Many static] spec tx -> spec tb = Fn[mf O L] spec tx -> spec tb
+
+Thus, the types t correspond to the values v exactly as stated in the lemma.
+
+==================================================================================================
+Lemma: Combine nonlinear
+
+If C = C1 # !C2
+Then C = C1
+
+Let
+  C = D ; H ; P ; Γ
+  C1 = D ; H ; P1 ; Γ1
+  C2 = D ; H ; P2 ; Γ2
+
+If P = P1 # !P2 then P = P1
+Proof:
+  By definition of # for P = P1 # !P2 we know ¡P = ¡P1, ¡!P2 and !P = !P1 = !!P2
+  Simplifying: ¡P = ¡P1, {} and !P = !P1 = !P2
+  Simplifying: ¡P = ¡P1 and !P = !P1
+  So P = P1
+
+If Γ = Γ1 # !Γ2 then Γ = Γ1
+Proof:
+  By definition of # for Γ = Γ1 # !Γ2 we know ¡Γ = ¡Γ1, ¡!Γ2 and
+    (!Γ, spec(¡Γ)) = (!Γ1, spec(¡Γ1)) = (!!Γ2, spec(¡!Γ2))
+  Simplifying: ¡Γ = ¡Γ1 and
+    (!Γ, spec(¡Γ)) = (!Γ1, spec(¡Γ1)) = !Γ2
+    (!Γ, spec(¡Γ)) = (!Γ1, spec(¡Γ1))
+    !Γ = !Γ1 and spec(¡Γ) = spec(¡Γ1)
+  So ¡Γ = ¡Γ1 and !Γ = !Γ1
+  So Γ = Γ1
+
+==================================================================================================
+Lemma: Function body weakening
+
+If
+  D ; H ; Pb ; Γb, x -> μx tx ; mf |ς- eb : μb tb
+  function_body_context(O, L, P, Γ, Pb, Γb, u)
+Then
+  D ; H ; P ; Γ, x -> μx tx ; mf |ς- eb : μb tb
+
+By function_body_context(O, L, P, Γ, Pb, Γb, u) definition:
+  IF O = Once AND L = restricted THEN Pb = P AND Γb = Γ
+  IF O = Many AND L = restricted THEN P = !P AND Γ = !Γ AND Pb = P AND Γb = Γ
+  IF O = Many AND L = static THEN P = !P AND Pb = {} AND Γ = !Γ AND Γb = spec(Γ)
+  IF O = Once AND L = static THEN Pb = ¡P AND Γb = ¡Γ, spec(!Γ) AND is_static(¡Γ)
+  IF O = Once THEN u = linear
+
+CASE L = restricted:
+  Pb = P and Γb = Γ
+
+CASE L = static:
+  By Lemma: Weakening
+
+==================================================================================================
+Lemma: Value sharing
+
+If C ; m |ς- v : μ t
+Then !C, shared(¡C) ; m |ς- v : as_shared(μ) t
+
+Induction on C ; m |ς- v : μ t
+
+CASE
+    spec(C) = spec(C')
+    mode_of(μ) = mode_of(μ')
+    C' ; m |lax- e : μ' t
+    ----------------------------
+    C ; m |lax- e : μ t
+  By induction on C' ; m |lax- e : μ' t:
+    !C', shared(¡C') ; m |lax- v : as_shared(μ') t
+  By laxity typing rule:
+    spec(!C, shared(¡C)) = spec(!C', shared(¡C'))
+    mode_of(as_shared(μ)) = mode_of(as_shared(μ'))
+    !C', shared(¡C') ; m |lax- v : as_shared(μ') t
+    ----------------------------------------------
+    !C, shared(¡C) ; m |lax- v : as_shared(μ) t
+
+CASES v = i | () | ⟂ | None(t)
+  By typing rule, C = !C, so C = !C, shared(¡C).
+
+CASE
+    !C' ; m |ς- v : exec linear t
+    C' ; exec |- t : Copy
+    -------------------------------------------------------------------
+    !C', i -> u ; m |ς- permission(i -> v) : proof u permission(i -> t)
+  If u = shared:
+    C = !C', i -> shared = !(C', i -> shared) = !C, shared(¡C).
+    (No induction needed)
+  If u = linear:
+    C = !C', i -> linear
+    !C = !C'
+    ¡C = i -> linear
+    !C, shared(¡C) = !C', i -> shared
+    By typing rule:
+      !C' ; m |ς- v : exec linear t
+      C' ; exec |- t : Copy
+      -----------------------------------------------------------------------------
+      !C', i -> shared ; m |ς- permission(i -> v) : proof shared permission(i -> t)
+    (No induction needed)
+
+CASE
+    !C ; m |ς- v : μ t
+    ------------------------------------------------------
+    !C ; m |ς- permission(i -> v) : spec permission(i -> t)
+  By typing rule, C = !C, so C = !C, shared(¡C).
+
+CASE
+    C ; m |ς- v' : μ t'
+    -------------------------------------
+    C ; m |ς- Some(v': t') : μ Option(t')
+  By induction on C ; m |ς- v' : μ t'
+
+CASE
+    C1 # ... # Cn = ..., S -> (m1 t1, ..., mn tn), ... ; ... ; ...
+    C1 ; m |ς- v1 : (m1 ⊔ μ) t1
+    ...
+    Cn ; m |ς- vn : (mn ⊔ μ) tn
+    --------------------------------------------------------------
+    C1 # ... # Cn ; m |ς- S(v1, ..., vn) : μ S
+  By induction on each Ci ; m |ς- vi : (mi ⊔ μ) ti, we know:
+    !Ci, shared(¡Ci) ; m |ς- vi : as_shared(mi ⊔ μ) ti
+  By definition of as_shared and ⊔, we can prove as_shared(mi ⊔ μ) = mi ⊔ as_shared(μ):
+    as_shared(mi ⊔ spec) = as_shared(spec) = spec = mi ⊔ spec = mi ⊔ as_shared(spec)
+    as_shared(spec ⊔ (m u)) = as_shared(spec) = spec = spec ⊔ (m shared) = spec ⊔ as_shared(m u)
+    as_shared(proof ⊔ (m u)) = as_shared(proof u) = proof shared = proof ⊔ as_shared(m u)
+    as_shared(exec ⊔ (m u)) = as_shared(m u) = m shared = exec ⊔ as_shared(m u)
+  So:
+    !Ci, shared(¡Ci) ; m |ς- vi : (mi ⊔ as_shared(μ)) ti
+  By Lemma: Weakening:
+    !Ci, shared(¡C1), ..., shared(¡Cn) ; m |ς- vi : (mi ⊔ as_shared(μ)) ti
+  By typing rule for S(v1, ..., vn):
+    !C, shared(¡C) ; m |ς- v : as_shared(μ) t
+
+CASE
+  D ; H ; Pb ; Γb, x -> μx tx ; mf |ς- eb : μb tb
+  D |- tx
+  function_body_context(O, L, P, Γ, Pb, Γb, u)
+  non_spec_function_modes(mf, μx, μb, tb)
+  ---------------------------------------------------------------------------------
+  D ; H ; P ; Γ ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+  C = D ; H ; P ; Γ
+  CASE O = Many
+    We can reapply this rule with u = shared to get:
+      D ; H ; P ; Γ ; m |ς- (λ[mf O L] x: μx tx. eb) : mf shared (Fn[mf O L] μx tx -> μb tb)
+    C = !C, so C = !C, shared(¡C):
+      !C, shared(¡C) ; m |ς- (λ[mf O L] x: μx tx. eb) : as_shared(mf u) (Fn[mf O L] μx tx -> μb tb)
+  CASE O = Once
+    By Lemma: Function body weakening:
+      C, x -> μx tx ; mf |ς- eb : μb tb
+    By Lemma: As lax:
+      C, x -> μx tx ; mf |lax- eb : μb tb
+    Let !C' = !C, shared(¡C)
+    By laxity typing rule:
+      spec(!C', x -> μx tx) = spec(D ; H ; Pb ; Γb, x -> μx tx)
+      mode_of(μb) = mode_of(μb)
+      C, x -> μx tx ; mf |lax- eb : μb tb
+      -------------------------------------------------
+      !C', x -> μx tx ; mf |lax- eb : μb tb
+    By the dummy shared rule:
+      !C', x -> μx tx ; mf |lax- eb : μb tb
+      !C' |- tx
+      non_spec_function_modes(mf, μx, μb, tb)
+      ----------------------------------------------------------------------------------
+      !C' ; m |ς- (λ[mf Once L] x: μx tx. eb) : mf shared (Fn[mf Once L] μx tx -> μb tb)
+
+CASE
+  !C, x -> μx tx ; mf |lax- eb : μb tb
+  !C |- tx
+  non_spec_function_modes(mf, μx, μb, tb)
+  ----------------------------------------------------------------------
+  !C ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+  This is already in the form !C, shared(¡C) ; m |ς- v : as_shared(spec) t
+
+CASE
+  !C, x -> μx tx ; mf |lax- eb : μb tb
+  !C |- tx
+  non_spec_function_modes(mf, μx, μb, tb)
+  ---------------------------------------------------------------------------------
+  !C ; m |ς- (λ[mf Once L] x: μx tx. eb) : mf shared (Fn[mf Once L] μx tx -> μb tb)
+  This is already in the form !C, shared(¡C) ; m |ς- v : as_shared(mf shared) t
+
+CASE
+  !Cb, x -> spec tx ; spec |ς- eb : spec tb
+  !C |- tx
+  function_body_context(Many, static, !C, !Cb, shared)
+  ------------------------------------------------------------------------------------------------
+  !C ; m |ς- (λ[spec Many static] x: spec tx. eb) : spec (Fn[spec Many static] spec tx -> spec tb)
+  This is already in the form !C, shared(¡C) ; m |ς- v : as_shared(spec) t
+
+==================================================================================================
+Lemma: Value nonsharing
+
+If
+  C, shared(Cz) ; m |ς- v : μ t
+  is_unrestricted(μ, t)
+Then
+  C, spec(Cz) ; m |ς- v: μ t
+
+Proof by induction on C, shared(Cz) ; m |ς- v : μ t
+
+is_unrestricted(μ, t) means:
+  μ != mv shared
+  mode_of(μ) |- t : static
+
+CASE laxity typing rule
+    spec(C) = spec(C')
+    mode_of(μ) = mode_of(μ')
+    C' ; m |lax- e : μ' t
+    ------------------------ (laxity typing rule)
+    C ; m |lax- e : μ t
+  No induction necessary; just apply lax typing rule
+
+CASES v = i | () | ⟂ | None(t)
+  By typing rules for i | () | ⟂:
+    C, spec(Cz) ; m |ς- v: μ t
+
+CASE v = permission(i -> v'), main rule
+    !C' ; m |ς- v' : exec linear t
+    C' ; exec |- t : Copy
+    --------------------------------------------------------------------
+    !C', i -> u ; m |ς- permission(i -> v') : proof u permission(i -> t)
+  where where !C', i -> u = C, shared(Cz)
+  Since μ != mv shared we know u = linear, so i -> u does not appear in shared(Cz)
+  Let !C' = !C'', shared(Cz)
+  So !C'', shared(Cz), i -> u = C, shared(Cz)
+  So !C'', spec(Cz), i -> u = C, spec(Cz)
+  By induction:
+    !C'', spec(Cz) ; m |ς- v' : exec linear t
+  By typing rule:
+    !C'', spec(Cz), i -> u ; m |ς- permission(i -> v') : proof u permission(i -> t)
+  So
+    C, spec(Cz) ; m |ς- permission(i -> v') : proof u permission(i -> t)
+
+CASE v = permission(i -> v'), dummy rule
+    !C' ; m |ς- v' : μ t
+    ---------------------------------------------------------
+    !C' ; m |ς- permission(i -> v') : spec permission(i -> t)
+  where where !C' = C, shared(Cz)
+  By induction:
+    C, spec(Cz) ; m |ς- v' : μ t
+  By typing rule:
+    C, spec(Cz) ; m |ς- permission(i -> v') : spec permission(i -> t)
+
+CASE v = Some(v')
+    C' ; m |ς- v' : μ t'
+    --------------------------------------
+    C' ; m |ς- Some(v': t') : μ Option(t')
+  where C' = C, shared(Cz)
+  By induction:
+    C, spec(Cz) ; m |ς- v' : μ t
+  By typing rule:
+    C, spec(Cz) ; m |ς- Some(v': t') : μ Option(t')
+
+CASE v = S(v1, ..., vn)
+    C1 # ... # Cn = ..., S -> (m1 t1, ..., mn tn), ... ; ... ; ... ; ...
+    C1 ; m |ς- e1 : (m1 ⊔ μ) t1
+    ...
+    Cn ; m |ς- en : (mn ⊔ μ) tn
+    ------------------------------------------
+    C1 # ... # Cn ; m |ς- S(e1, ..., en) : μ S
+  where C1 # ... # Cn = C, shared(Cz)
+  Let C1 = C1', shared(Cz)
+  ...
+  Let Cn = Cn', shared(Cz)
+  So (C1' # ... # Cn'), shared(Cz) = C, shared(Cz)
+  So (C1' # ... # Cn'), spec(Cz) = C, spec(Cz)
+  By induction:
+    C1', spec(Cz) ; m |ς- e1 : (m1 ⊔ μ) t1
+    ...
+    Cn', spec(Cz) ; m |ς- en : (mn ⊔ μ) tn
+  By typing rule:
+    (C1', spec(Cz)) # ... # (Cn', spec(Cz)) ; m |ς- S(e1, ..., en) : μ S
+  So:
+    (C1' # ... # Cn'), spec(Cz) ; m |ς- S(e1, ..., en) : μ S
+    C, spec(Cz) ; m |ς- S(e1, ..., en) : μ S
+
+CASE v = λ[m O L] x: μx tx. eb, main non-spec rule
+    Cb, x -> μx tx ; mf |ς- eb : μb tb
+    D |- tx
+    function_body_context(O, L, (C, shared(Cz)), Cb, u)
+    non_spec_function_modes(mf, μx, μb, tb)
+    ---------------------------------------------------------------------------------
+    C, shared(Cz) ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+  Since μ != mv shared we know u = linear
+  By non_spec_function_modes, mf != spec, so mode_of(μ) != spec,
+    so mode_of(μ) |- t : static means |- t : static, which means L = static
+  Let C, shared(Cz) = D ; H ; P ; Γ
+  Let C, spec(Cz) = D ; H ; P' ; Γ'
+  Let Cb = D ; H ; Pb ; Γb
+  By function_body_context:
+    IF O = Many AND L = static THEN P = !P and Pb = {} AND Γ = !Γ AND Γb = spec(Γ)
+    IF O = Once AND L = static THEN Pb = ¡P AND Γb = ¡Γ, spec(!Γ) AND is_static(¡Γ)
+  Observe that P' and Γ' also satisfy function_body_context with the same Pb and Γb as for P and Γ:
+    IF O = Many AND L = static THEN P' = !P' and Pb = {} AND Γ' = !Γ' AND Γb = spec(Γ')
+    IF O = Once AND L = static THEN Pb = ¡P' AND Γb = ¡Γ', spec(!Γ') AND is_static(¡Γ')
+  So:
+    function_body_context(O, L, (C, spec(Cz)), Cb, u)
+  Therefore, we can apply the typing rule as-is, without altering the typing of eb in Cb:
+    C, spec(Cz) ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+
+CASE v = λ[m O L] x: μx tx. eb, dummy spec rule
+    !C, x -> μx tx ; mf |lax- eb : μb tb
+    !C |- tx
+    non_spec_function_modes(mf, μx, μb, tb)
+    ----------------------------------------------------------------------
+    !C ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+  where !C = C, shared(Cz)
+  Let !C' = C, spec(Cz)
+  By laxity typing rule, since spec(!C', x -> μx tx) = spec(!C, x -> μx tx):
+    !C', x -> μx tx ; mf |lax- eb : μb tb
+  By typing rule:
+    !C' ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+
+CASE v = λ[m O L] x: μx tx. eb, dummy shared rule
+    !C, x -> μx tx ; mf |lax- eb : μb tb
+    !C |- tx
+    non_spec_function_modes(mf, μx, μb, tb)
+    ---------------------------------------------------------------------------------
+    !C ; m |ς- (λ[mf Once L] x: μx tx. eb) : mf shared (Fn[mf Once L] μx tx -> μb tb)
+  where !C = C, shared(Cz)
+  Let !C' = C, spec(Cz)
+  By laxity typing rule, since spec(!C', x -> μx tx) = spec(!C, x -> μx tx):
+    !C', x -> μx tx ; mf |lax- eb : μb tb
+  By typing rule:
+    !C' ; m |ς- (λ[mf Once L] x: μx tx. eb) : mf shared (Fn[mf Once L] μx tx -> μb tb)
+
+CASE v = λ[m O L] x: μx tx. eb, main spec rule
+    !Cb, x -> spec tx ; spec |ς- eb : spec tb
+    !C |- tx
+    function_body_context(Many, static, !C, !Cb, shared)
+    ------------------------------------------------------------------------------------------------
+    !C ; m |ς- (λ[spec Many static] x: spec tx. eb) : spec (Fn[spec Many static] spec tx -> spec tb)
+  where !C = C, shared(Cz)
+  Let !C' = C, spec(Cz)
+  Let C, shared(Cz) = D ; H ; P ; Γ
+  Let C, spec(Cz) = D ; H ; P' ; Γ'
+  Let !Cb = D ; H ; Pb ; Γb
+  By function_body_context:
+    IF O = Many AND L = static THEN P = !P and Pb = {} AND Γ = !Γ AND Γb = spec(Γ)
+  Observe that P' and Γ' also satisfy function_body_context with the same Pb and Γb as for P and Γ:
+    IF O = Many AND L = static THEN P' = !P' and Pb = {} AND Γ' = !Γ' AND Γb = spec(Γ')
+  So:
+    function_body_context(O, L, (C, spec(Cz)), Cb, u)
+  Therefore, we can apply the typing rule as-is, without altering the typing of eb in !Cb:
+    !C' ; m |ς- (λ[spec Many static] x: spec tx. eb) : spec (Fn[spec Many static] spec tx -> spec tb)
+
+==================================================================================================
+Lemma: Value shared nonlinear
+
+If
+  C ; m |ς- v : μ t
+  !is_linear(μ) or mode_of(μ) |- t : Copy
+  ς = strict
+Then C = !C
+
+If !is_linear(μ):
+  By Lemma: Value shared nonlinear simplified, C = !C
+
+If mode_of(μ) |- t : Copy:
+  μ = mode_of(μ) linear
+  By Lemma: Copy value:
+    C ; m |ς- v : mode_of(μ) shared t
+  By Lemma: Value shared nonlinear simplified, C = !C
+
+==================================================================================================
+Lemma: Value shared nonlinear simplified
+
+If
+  C ; m |ς- v : μ t
+  !is_linear(μ)
+  ς = strict
+Then C = !C
+
+Induction on C ; m |ς- v : μ t, which requires only the rules for v
+(note: we really do need ς = strict here; this lemma is clearly not true for ς = lax)
+
+CASES v = i | () | ⟂ | None(t')
+  By typing rule, C = !C
+
+CASE
+  !C' ; m |ς- v : exec linear t
+  C' ; exec |- t : Copy
+  -------------------------------------------------------------------
+  !C', i -> u ; m |ς- permission(i -> v) : proof u permission(i -> t)
+  u = shared
+  Here, C = !C', i -> shared = !(C', i -> shared)
+
+CASE
+  !C ; m |ς- v : μ t
+  ------------------------------------------------------
+  !C ; m |ς- permission(i -> v) : spec permission(i -> t)
+  By typing rule, C = !C
+
+CASE
+  C ; m |ς- v' : μ t'
+  -------------------------------------
+  C ; m |ς- Some(v': t') : μ Option(t')
+  By induction on C ; m |ς- v' : μ t'
+
+CASE
+  C1 # ... # Cn = ..., S -> (m1 t1, ..., mn tn), ... ; ... ; ...
+  C1 ; m |ς- v1 : (m1 ⊔ μ) t1
+  ...
+  Cn ; m |ς- vn : (mn ⊔ μ) tn
+  --------------------------------------------------------------
+  C1 # ... # Cn ; m |ς- S(v1, ..., vn) : μ S
+  By induction on each Ci ; m |ς- vi : (mi ⊔ μ) ti
+  (Note that if !is_linear(μ), then !is_linear(mi ⊔ μ))
+
+CASE
+  D ; H ; Pb ; Γb, x -> μx tx ; mf |ς- eb : μb tb
+  D |- tx
+  function_body_context(O, L, P, Γ, Pb, Γb, u)
+  non_spec_function_modes(mf, μx, μb, tb)
+  --------------------------------------------------------------------------------
+  D ; H ; P ; Γ ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+  CASE O = Once
+    By non_spec_function_modes, mf != spec
+    By function_body_context, when O = Once, u = linear, which means is_linear(mf u)
+    So this case can't happen
+  CASE O = Many
+    By typing rule, C = !C
+
+CASE
+  !C, x -> μx tx ; mf |lax- eb : μb tb
+  !C |- tx
+  non_spec_function_modes(mf, μx, μb, tb)
+  ----------------------------------------------------------------------
+  !C ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+  By typing rule, C = !C
+
+CASE
+  !C, x -> μx tx ; mf |lax- eb : μb tb
+  !C |- tx
+  non_spec_function_modes(mf, μx, μb, tb)
+  --------------------------------------------------------------------------------
+  !C ; m |ς- (λ[mf Once L] x: μx tx. eb) : mf shared (Fn[mf Once L] μx tx -> μb tb)
+  By typing rule, C = !C
+
+CASE
+  !Cb, x -> spec tx ; spec |ς- eb : spec tb
+  !C |- tx
+  function_body_context(Many, static, !C, !Cb, shared)
+  -----------------------------------------------------------------------------------------------
+  !C ; m |ς- (λ[spec Many static] x: spec tx. eb) : spec (Fn[spec Many static] spec tx -> spec tb)
+  By typing rule, C = !C
+
+==================================================================================================
+Lemma: Value/env as spec
+
+If
+  !C ; m |ς- v : μ t
+  !is_linear(μ)
+Then
+  spec(!C) ; m |ς- v : spec t
+
+By induction on !C ; m |ς- v : μ t
+
+CASE v = i | () | ⟂ | None(t)
+  By typing rules for i, (), ⟂, None(t)
+
+CASE v = permission(i -> v)
+  By dummy rule for permission(i -> v)
+
+CASE v = Some(v: t) | S(v1, ..., vn)
+  Straightforward induction
+
+CASE v = λ[mf O L] x: μx tx. eb
+  CASE mf = spec
+    The only rule that can conclude this is the main spec function typing rule:
+      !Cb, x -> spec tx ; spec |ς- eb : spec tb
+      !C |- tx
+      function_body_context(Many, static, !C, !Cb, shared)
+      ------------------------------------------------------------------------------------------------
+      !C ; m |ς- (λ[spec Many static] x: spec tx. eb) : spec (Fn[spec Many static] spec tx -> spec tb)
+    By function_body_context:
+      IF O = Many AND L = static THEN P = !P AND Pb = {} AND Γ = !Γ AND Γb = spec(Γ)
+    Based on Pb = {} and Γb = spec(Γ), we can change !C to spec(!C)
+      and reapply the spec function typing rule
+  CASE mf != spec
+    By Lemma: Value as spec:
+      !C ; m |ς- v : spec t
+    The only rule that can conclude this for mf != spec is the dummy rule for spec:
+      !C, x -> μx tx ; mf |lax- eb : μb tb
+      !C |- tx
+      non_spec_function_modes(mf, μx, μb, tb)
+      ----------------------------------------------------------------------
+      !C ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+    We can use the laxity typing rule to change !C to spec(!C) and then reapply the dummy rule.
+
+==================================================================================================
+Lemma: Value as spec
+
+If
+  C ; m |ς- v : μ t
+  !is_linear(μ) or ς = lax or mode_of(μ) |- t : Copy
+Then
+  C ; m |ς- v : spec t
+
+If !is_linear(μ) or ς = lax:
+  By Lemma: Value as spec simplified:
+    C ; m |ς- v : spec t
+
+Otherwise:
+  μ = mv linear and mv |- t : Copy
+  By Lemma: Copy value:
+    C ; m |ς- v : mv shared t
+  By Lemma: Value as spec simplified:
+    C ; m |ς- v : spec t
+
+==================================================================================================
+Lemma: Value as spec simplified
+
+If
+  C ; m |ς- v : μ t
+  !is_linear(μ) or ς = lax
+Then
+  C ; m |ς- v : spec t
+
+Induction on C ; m |ς- v : μ t, which requires only the rules for v
+
+CASE
+    spec(C) = spec(C')
+    mode_of(μ) = mode_of(μ')
+    C' ; m |lax- v : μ' t
+    ----------------------------
+    C ; m |lax- v : μ t
+  By induction on C' ; m |lax- e : μ' t:
+    C' ; m |ς- v : spec t
+  By laxity typing rule:
+    spec(C) = spec(C')
+    mode_of(spec) = mode_of(spec)
+    C' ; m |lax- v : spec t
+    -----------------------------
+    C ; m |lax- v : spec t
+
+CASES v = i | () | ⟂ | None(t')
+  By typing rules for v = i | () | ⟂:
+    C ; m |ς- v : spec t
+
+CASE
+  !C' ; m |ς- v : exec linear t
+  C' ; exec |- t : Copy
+  -------------------------------------------------------------------
+  !C', i -> u ; m |ς- permission(i -> v) : proof u permission(i -> t)
+  By Lemma: Weakening on !C' ; m |ς- v : exec linear t:
+    !C', i -> shared ; m |ς- v : exec linear t
+  We can apply the other typing rule for permission(i -> t) here:
+    !C', i -> shared ; m |ς- permission(i -> v) : spec permission(i -> t)
+  CASE ς = strict
+    !is_linear(proof u) means u = shared, so:
+      !C', i -> u ; m |ς- permission(i -> v) : spec permission(i -> t)
+  CASE ς = lax
+    By laxity typing rule:
+      spec(!C', i -> u) = spec(!C', i -> shared)
+      mode_of(spec) = mode_of(spec)
+      !C', i -> shared ; m |lax- permission(i -> v) : spec permission(i -> t)
+      -----------------------------------------------------------------------
+      !C', i -> u ; m |lax- permission(i -> v) : spec permission(i -> t)
+
+CASE
+  !C ; m |ς- v : μ t
+  ------------------------------------------------------
+  !C ; m |ς- permission(i -> v) : spec permission(i -> t)
+  This satisfies the lemma immediately.
+
+CASE
+  C ; m |ς- v' : μ t'
+  -------------------------------------
+  C ; m |ς- Some(v': t') : μ Option(t')
+  By induction on C ; m |ς- v' : μ t'
+
+CASE
+  C1 # ... # Cn = ..., S -> (m1 t1, ..., mn tn), ... ; ... ; ...
+  C1 ; m |ς- v1 : (m1 ⊔ μ) t1
+  ...
+  Cn ; m |ς- vn : (mn ⊔ μ) tn
+  --------------------------------------------------------------
+  C1 # ... # Cn ; m |ς- S(v1, ..., vn) : μ S
+  Notice that !is_linear(μ) implies !is_linear(mi ⊔ μ)
+  By induction on each Ci ; m |ς- vi : (mi ⊔ μ) ti we get:
+    Ci ; m |ς- vi : spec ti
+  This satisfies
+    Ci ; m |ς- vi : (mi ⊔ spec) ti
+  since spec = mi ⊔ spec
+  So we can conclude
+    C1 # ... # Cn ; m |ς- S(v1, ..., vn) : spec S
+
+CASE
+  D ; H ; Pb ; Γb, x -> μx tx ; mf |ς- eb : μb tb
+  D |- tx
+  function_body_context(O, L, P, Γ, Pb, Γb, u)
+  non_spec_function_modes(mf, μx, μb, tb)
+  --------------------------------------------------------------------------------
+  D ; H ; P ; Γ ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+  C = D ; H ; P ; Γ
+  By non_spec_function_modes, mf != spec
+  By Lemma: Function body weakening:
+    C, x -> μx tx ; mf |ς- eb : μb tb
+  CASE O = Once
+    O = Once means u = linear, so is_linear(mf u), so ς = lax, so:
+      C, x -> μx tx ; mf |lax- eb : μb tb
+    Let !C' = nonlinear(C)
+    By laxity typing rule:
+      spec(!C', x -> μx tx) = spec(C, x -> μx tx)
+      mode_of(μb) = mode_of(μb)
+      C, x -> μx tx ; mf |lax- eb : μb tb
+      ------------------------------------------------
+      !C', x -> μx tx ; mf |lax- eb : μb tb
+    We can apply the other typing rule for (Fn[mf O L] μx tx -> μb tb) here:
+      !C', x -> μx tx ; mf |lax- eb : μb tb
+      !C' |- tx
+      non_spec_function_modes(mf, μx, μb, tb)
+      -----------------------------------------------------------------------
+      !C' ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+    By laxity typing rule:
+      spec(C) = spec(!C')
+      mode_of(μb) = mode_of(μb)
+      !C' ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+      -----------------------------------------------------------------------
+      C ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+  CASE O = Many
+    Since O = Many, we know P = !P and Γ = !Γ and !C = C, so:
+      !C, x -> μx tx ; mf |ς- eb : μb tb
+    By Lemma: As lax:
+      !C, x -> μx tx ; mf |lax- eb : μb tb
+    We can apply the other typing rule for (Fn[mf O L] μx tx -> μb tb) here:
+      !C, x -> μx tx ; mf |lax- eb : μb tb
+      !C |- tx
+      non_spec_function_modes(mf, μx, μb, tb)
+      ----------------------------------------------------------------------
+      !C ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+
+CASE
+  !C, x -> μx tx ; mf |lax- eb : μb tb
+  !C |- tx
+  non_spec_function_modes(mf, μx, μb, tb)
+  ---------------------------------------------------------------------
+  !C ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+  This case satisfies C ; m |- v : spec t immediately.
+
+CASE
+  !C, x -> μx tx ; mf |lax- eb : μb tb
+  !C |- tx
+  non_spec_function_modes(mf, μx, μb, tb)
+  --------------------------------------------------------------------------------
+  !C ; m |ς- (λ[mf Once L] x: μx tx. eb) : mf shared (Fn[mf Once L] μx tx -> μb tb)
+  We can apply the other dummy typing rule for
+    !C ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+  here.
+
+CASE
+  !Cb, x -> spec tx ; spec |- eb : spec tb
+  !C |- tx
+  function_body_context(Many, static, !C, !Cb, shared)
+  -----------------------------------------------------------------------------------------------
+  !C ; m |- (λ[spec Many static] x: spec tx. eb) : spec (Fn[spec Many static] spec tx -> spec tb)
+  This case satisfies C ; m |- v : spec t immediately.
+
+==================================================================================================
+Lemma: Linear value as spec
+
+If
+  C ; m |ς- v : μ t
+Then
+  !C, spec(¡C) ; m |ς- v : spec t
+
+Induction on C ; m |ς- v : μ t, which requires only the rules for v
+
+CASE
+    spec(C) = spec(C')
+    mode_of(μ) = mode_of(μ')
+    C' ; m |lax- v : μ' t
+    ----------------------------
+    C ; m |lax- v : μ t
+  By induction on C' ; m |lax- e : μ' t:
+    !C', spec(¡C') ; m |ς- v : spec t
+  By laxity typing rule:
+    spec(!C, spec(¡C)) = spec(!C', spec(¡C'))
+    mode_of(spec) = mode_of(spec)
+    C' ; m |lax- v : spec t
+    ---------------------------------
+    !C, spec(¡C) ; m |lax- v : spec t
+
+CASES v = i | () | ⟂ | None(t')
+  By typing rules for v = i | () | ⟂:
+    !C, spec(¡C) ; m |ς- v : spec t
+
+CASE
+    !C' ; m |ς- v : exec linear t
+    C' ; exec |- t : Copy
+    -------------------------------------------------------------------
+    !C', i -> u ; m |ς- permission(i -> v) : proof u permission(i -> t)
+  CASE u = shared
+    By Lemma: Weakening on !C' ; m |ς- v : exec linear t:
+      !C', i -> shared ; m |ς- v : exec linear t
+    We can apply the other typing rule for permission(i -> t) here:
+      !C', i -> shared ; m |ς- permission(i -> v) : spec permission(i -> t)
+  CASE u = linear
+    We can apply the other typing rule for permission(i -> t) here:
+      !C' ; m |ς- permission(i -> v) : spec permission(i -> t)
+
+CASE
+  !C ; m |ς- v : μ t
+  ------------------------------------------------------
+  !C ; m |ς- permission(i -> v) : spec permission(i -> t)
+  This satisfies the lemma immediately.
+
+CASE
+  C ; m |ς- v' : μ t'
+  -------------------------------------
+  C ; m |ς- Some(v': t') : μ Option(t')
+  By induction on C ; m |ς- v' : μ t'
+
+CASE
+  C1 # ... # Cn = ..., S -> (m1 t1, ..., mn tn), ... ; ... ; ...
+  C1 ; m |ς- v1 : (m1 ⊔ μ) t1
+  ...
+  Cn ; m |ς- vn : (mn ⊔ μ) tn
+  --------------------------------------------------------------
+  C1 # ... # Cn ; m |ς- S(v1, ..., vn) : μ S
+  By induction on each Ci ; m |ς- vi : (mi ⊔ μ) ti we get:
+    !Ci, spec(¡Ci) ; m |ς- vi : spec ti
+  This satisfies
+    !Ci, spec(¡Ci) ; m |ς- vi : (mi ⊔ spec) ti
+  since spec = mi ⊔ spec
+  So we can conclude
+    (!C1, spec(¡C1)) # ... # (!Cn, spec(¡Cn)) ; m |ς- S(v1, ..., vn) : spec S
+    !C, spec(¡C) ; m |ς- S(v1, ..., vn) : spec S
+
+CASE
+  D ; H ; Pb ; Γb, x -> μx tx ; mf |ς- eb : μb tb
+  D |- tx
+  function_body_context(O, L, P, Γ, Pb, Γb, u)
+  non_spec_function_modes(mf, μx, μb, tb)
+  --------------------------------------------------------------------------------
+  D ; H ; P ; Γ ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+  C = D ; H ; P ; Γ
+  By Lemma: Function body weakening:
+    C, x -> μx tx ; mf |ς- eb : μb tb
+  By Lemma: As lax:
+    C, x -> μx tx ; mf |lax- eb : μb tb
+  By laxity typing rule:
+    spec(!C, spec(¡C), x -> μx tx) = spec(C, x -> μx tx)
+    mode_of(μ) = mode_of(μ)
+    C, x -> μx tx ; mf |lax- eb : μb tb
+    ----------------------------------------------
+    !C, spec(¡C), x -> μx tx ; mf |lax- eb : μb tb
+  By dummy spec typing rule:
+    !C, spec(¡C) ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+
+CASE
+  !C, x -> μx tx ; mf |lax- eb : μb tb
+  !C |- tx
+  non_spec_function_modes(mf, μx, μb, tb)
+  ---------------------------------------------------------------------
+  !C ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+  C = !C, so ¡C = {}
+  So this case satisfies !C, spec(¡C) ; m |- v : spec t immediately.
+
+CASE
+  !C, x -> μx tx ; mf |lax- eb : μb tb
+  !C |- tx
+  non_spec_function_modes(mf, μx, μb, tb)
+  --------------------------------------------------------------------------------
+  !C ; m |ς- (λ[mf Once L] x: μx tx. eb) : mf shared (Fn[mf Once L] μx tx -> μb tb)
+  C = !C, so ¡C = {}
+  We can apply the other dummy typing rule for
+    !C ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+  here.
+
+CASE
+  !Cb, x -> spec tx ; spec |- eb : spec tb
+  !C |- tx
+  function_body_context(Many, static, !C, !Cb, shared)
+  -----------------------------------------------------------------------------------------------
+  !C ; m |- (λ[spec Many static] x: spec tx. eb) : spec (Fn[spec Many static] spec tx -> spec tb)
+  C = !C, so ¡C = {}
+  So this case satisfies !C, spec(¡C) ; m |- v : spec t immediately.
+
+==================================================================================================
+Lemma: As lax
+
+If
+  C ; m |ς- e : μ t
+Then
+  C ; m |lax- e : μ t
+
+By induction on C ; m |ς- e : μ t
+
+All the typing rules either:
+- pass ς unchanged between premises and conclusions; these cases are trivial inductions
+- use lax in the premises and leave ς unconstrained; these are trivial without induction
+
+Sample cases:
+
+CASE
+    C1 ; m |ς- e1 : μ int
+    C2 ; m |ς- e2 : μ int
+    -------------------------------
+    C1 # C2 ; m |ς- e1 + e2 : μ int
+  By induction:
+    C1 ; m |lax- e1 : μ int
+    C2 ; m |lax- e2 : μ int
+  By typing:
+    C1 # C2 ; m |lax- e1 + e2 : μ int
+
+CASE
+    !C, x -> μx tx ; mf |lax- eb : μb tb
+    !C |- tx
+    non_spec_function_modes(mf, μx, μb, tb)
+    ---------------------------------------------------------------------------------
+    !C ; m |ς- (λ[mf Once L] x: μx tx. eb) : mf shared (Fn[mf Once L] μx tx -> μb tb)
+  Reapply typing rule with ς = lax:
+    !C ; m |lax- (λ[mf Once L] x: μx tx. eb) : mf shared (Fn[mf Once L] μx tx -> μb tb)
+
+Other cases are similar
+
+==================================================================================================
+Lemma: Weakening
+
+If
+  D ; H ; P ; Γa, spec(¡Γs) ; m |ς- e : μ t
+  Γ' = Γa, shared(¡Γs), !Γz
+Then
+  D ; H ; P, !Pz ; Γ' ; m |ς- e : μ t
+
+By induction on D ; H ; P ; Γa, spec(¡Γs) ; m |ς- e : μ t
+
+Let C = D ; H ; P ; Γa, spec(¡Γs)
+Let C' = D ; H ; P, !Pz ; Γ'
+
+CASE
+    spec(Γa, spec(¡Γs)) = spec(Γ1)
+    mode_of(μ) = mode_of(μ1)
+    D ; H ; P1 ; Γ1 ; m |lax- e : μ1 t
+    -------------------------------------------
+    D ; H ; P ; Γa, spec(¡Γs) ; m |lax- e : μ t
+  By induction on D ; H ; P1 ; Γ1 ; m |lax- e : μ1 t:
+    D ; H ; P1, !Pz ; Γ1, !Γz ; m |lax- e : μ1 t
+  Apply laxity typing rule:
+    spec(Γa, shared(¡Γs), !Γz) = spec(Γ1, !Γz)
+    mode_of(μ) = mode_of(μ1)
+    D ; H ; P1, !Pz ; Γ1, !Γz ; m |lax- e : μ1 t
+    -------------------------------------------------------
+    D ; H ; P, !Pz ; Γa, shared(¡Γs), !Γz ; m |lax- e : μ t
+
+CASE
+    m ⊑ mode_of(μx)
+    ---------------------------------------------
+    D ; H ; !P ; !Γ, x -> μx tx ; m |ς- x : μx tx
+  P = !P and Γ = !Γ
+  CASE x in Γa
+    Let Γa = !Γa = !Γa0, x -> μx tx
+    By reapplying the same rule with different !P, !Γ:
+      D ; H ; !P, !Pz ; !Γa0, shared(¡Γs), !Γz, x -> μx tx ; m |ς- x : μx tx
+  CASE x in spec(¡Γs)
+    Let spec(¡Γs) = spec(¡Γs0), x -> spec tx
+    Apply the typing other rule for x:
+      D ; H ; !P, !Pz ; !Γa, shared(¡Γs0), !Γz, x -> mx shared tx ; m |ς- x : spec tx
+
+CASE
+    D ; H ; !P ; !Γ, x -> mx shared tx ; m |ς- x : spec tx
+  P = !P and Γ = !Γ
+  The binding x -> mx shared tx cannot be part of spec(¡Γs), so x must be in Γa
+  Let Γa = !Γa = !Γa0, x -> μx tx
+  By reapplying the same rule with different !P, !Γ:
+    D ; H ; !P, !Pz ; !Γa0, shared(¡Γs), !Γz, x -> μx tx ; m |ς- x : μx tx
+
+CASE
+    D ; H ; P1 ; Γ1 ; m |ς- e1 : μ int
+    D ; H ; P2 ; Γ2 ; m |ς- e2 : μ int
+    -------------------------------------------------
+    D ; H ; P1 # P2 ; Γ1 # Γ2 ; m |ς- e1 + e2 : μ int
+  where P = P1 # P2 and Γa, spec(¡Γs) = Γ1 # Γ2
+  Let Γ1 = Γ1a, spec(¡Γs)
+  Let Γ2 = Γ2a, spec(¡Γs)
+  By induction:
+    D ; H ; P1, !Pz ; Γ1a, shared(¡Γs), !Γz ; m |ς- e1 : μ int
+    D ; H ; P2, !Pz ; Γ2a, shared(¡Γs), !Γz ; m |ς- e2 : μ int
+  By typing rule:
+    D ; H ; (P1 # P2), !Pz ; (Γ1a # Γ2a), shared(¡Γs), !Γz ; m |ς- e1 + e2 : μ int
+
+CASE
+    D ; H ; P1, shared(Pb) ; Γ1, shared(Γb) ; m |ς- e1: μ1 t1
+    D ; H ; P2, linear(Pb) ; Γ2, linear(Γb), x -> μ1 t1 ; m |ς- e2: μ2 t2
+    is_unrestricted(μ1, t1) OR (Pb = {} AND Γb = {})
+    mode_of(μ2) |- t2 : static
+    m1 = mode_of(μ1)
+    m ⊑ m1
+    -----------------------------------------------------------------------------------------
+    D ; H ; (P1 # P2), linear(Pb) ; (Γ1 # Γ2), linear(Γb) ; m |ς- let m1 x = e1 in e2 : μ2 t2
+  where P = (P1 # P2), linear(Pb)
+  where Γa, spec(¡Γs) = (Γ1 # Γ2), linear(Γb)
+  Let Γ1 = Γ1a, spec(¡Γs)
+  Let Γ2 = Γ2a, spec(¡Γs)
+  By induction:
+    D ; H ; P1, shared(Pb), !Pz ; Γ1a, shared(¡Γs), shared(Γb), !Γz ; m |ς- e1: μ1 t1
+    D ; H ; P2, linear(Pb), !Pz ; Γ2a, shared(¡Γs), linear(Γb), !Γz, x -> μ1 t1 ; m |ς- e2: μ2 t2
+  By typing rule:
+    D ; H ; (P1 # P2), linear(Pb), !Pz ; (Γ1a # Γ2a), shared(¡Γs), linear(Γb), !Γz ; m |ς- let m1 x = e1 in e2 : μ2 t2
+
+CASE
+    D ; H ; Pb ; Γb, x -> μx tx ; mf |ς- eb : μb tb
+    D |- tx
+    function_body_context(O, L, P, Γ, Pb, Γb, u)
+    non_spec_function_modes(mf, μx, μb, tb)
+    ---------------------------------------------------------------------------------
+    D ; H ; P ; Γ ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+  where Γa, spec(¡Γs) = Γ
+  IF O = Once AND L = restricted THEN Pb = P AND Γb = Γ
+    By induction:
+      D ; H ; Pb, !Pz ; Γa, shared(¡Γs), !Γz, x -> μx tx ; mf |ς- eb : μb tb
+    By typing rule:
+      D ; H ; P, !Pz ; Γa, shared(¡Γs), !Γz ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+  IF O = Many AND L = restricted THEN P = !P AND Γ = !Γ AND Pb = P AND Γb = Γ
+    By induction:
+      D ; H ; Pb, !Pz ; Γa, shared(¡Γs), !Γz, x -> μx tx ; mf |ς- eb : μb tb
+    By typing rule:
+      D ; H ; P, !Pz ; Γa, shared(¡Γs), !Γz ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+  IF O = Many AND L = static THEN P = !P AND Pb = {} AND Γ = !Γ AND Γb = spec(Γ)
+    Γb = spec(Γ) = spec(Γa), spec(¡Γs)
+      D ; H ; {} ; spec(Γa), spec(¡Γs), x -> μx tx ; mf |ς- eb : μb tb
+    By induction (using a different Pz' = {}, Γs' = {}, !Γz' = spec(!Γz), not the original Pz, Γs, Γz):
+      D ; H ; {} ; spec(Γa), spec(¡Γs), spec(!Γz), x -> μx tx ; mf |ς- eb : μb tb
+    By typing rule (using the original !Pz):
+      D ; H ; !Pz ; Γa, shared(¡Γs), !Γz ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+  IF O = Once AND L = static THEN Pb = ¡P AND Γb = ¡Γ, spec(!Γ) AND is_static(¡Γ)
+    Γa, spec(¡Γs) = Γ
+    ¡Γ = ¡Γa
+    !Γa, spec(¡Γs) = !Γ
+    Γb = ¡Γ, spec(!Γ) = ¡Γa, spec(!Γa), spec(¡Γs)
+      D ; H ; ¡P ; ¡Γa, spec(!Γa), spec(¡Γs), x -> μx tx ; mf |ς- eb : μb tb
+    By induction (using a different Pz' = {}, Γs' = {}, !Γz' = spec(!Γz), not the original Pz, Γs, Γz):
+      D ; H ; ¡P ; ¡Γa, spec(!Γa), spec(¡Γs), spec(!Γz), x -> μx tx ; mf |ς- eb : μb tb
+    By typing rule:
+      D ; H ; ¡P, (!P, !Pz) ; ¡Γa, !Γa, shared(¡Γs), !Γz ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+
+Other cases are similar.
+
+==================================================================================================
+Lemma: Mode weakening
+
+If
+  C ; m |ς- e : μ t
+  m' ⊑ m
+Then
+  C ; m' |ς- e : μ t
+
+By induction on C ; m |ς- e : μ t
+
+CASE
+    m ⊑ mode_of(μx)
+    --------------------------------
+    !C, x -> μx tx ; m |ς- x : μx tx
+  Since m' ⊑ m ⊑ mode_of(μx), we know m' ⊑ mode_of(μx) and can reapply the rule with m'
+
+CASE
+    !C ; m |ς- v : μ t
+    -------------------------------------------------------
+    !C ; m |ς- permission(i -> v) : spec permission(i -> t)
+  By induction on v:
+    !C ; m' |ς- v : μ t
+  By typing:
+    !C ; m' |ς- permission(i -> v) : spec permission(i -> t)
+
+CASE
+    C ; exec |ς- e_perm : proof shared permission(i -> t)
+    -----------------------------------------------------
+    C ; exec |ς- pread(i @ e_perm) : exec shared t
+  m = exec, so m' ⊑ m means m' ⊑ exec, which means m' = exec.  So C ; m' |ς- e : μ t is already satisfied.
+
+CASE
+    C ; m |ς- e' : me linear t'
+    C ; me |- t' : Copy
+    -----------------------------------
+    C ; m |ς- drop(e') : me shared Unit
+  By induction on e':
+    C ; m' |ς- e' : me linear t'
+  By typing rule:
+    C ; m' |ς- drop(e') : me shared Unit
+
+CASE
+    Cb, x -> μx tx ; mf |ς- eb : μb tb
+    D |- tx
+    function_body_context(O, L, C, Cb, u)
+    non_spec_function_modes(mf, μx, μb, tb)
+    ---------------------------------------------------------------------
+    C ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+  This does not constrain m, so we can immediately reapply the rule with a different m':
+    C ; m' |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+
+CASE
+    IF O = Once THEN is_linear(μ1)
+    C1 ; m |ς- ef : μ1 (Fn[mf O L] μa ta -> μb tb)
+    C2 ; m |ς- ea : μa ta
+    mode_of(μ1) ⊑ mf
+    m ⊑ mf
+    ----------------------------------------------
+    C1 # C2 ; m |ς- ef ea : μb tb
+  Since m' ⊑ m ⊑ mf, we know m' ⊑ mf
+  By induction:
+    C1 ; m' |ς- ef : μ1 (Fn[mf O L] μa ta -> μb tb)
+    C2 ; m' |ς- ea : μa ta
+  By typing:
+    C1 # C2 ; m' |ς- ef ea : μb tb
+
+Other cases are similar.
+
+==================================================================================================
+Lemma: Value mode change
+
+If C ; m |ς- v : μ t
+Then C ; m' |ς- v : μ t
+
+By induction on C ; m |ς- v : μ t
+
+CASE
+  spec(C) = spec(C')
+  mode_of(μ) = mode_of(μ')
+  C' ; m |lax- e : μ' t
+  ----------------------------
+  C ; m |lax- e : μ t
+  By induction on C' ; m |lax- e : μ' t
+
+CASES v = i | () | ⟂ | None(t')
+  The typing rules for these work for any m
+
+CASE
+  !C' ; m |ς- v : exec linear t
+  C' ; exec |- t : Copy
+  -------------------------------------------------------------------
+  !C', i -> u ; m |ς- permission(i -> v) : proof u permission(i -> t)
+  By induction on !C' ; m |ς- v : exec linear t
+
+CASE
+  !C ; m |ς- v : μ t
+  ------------------------------------------------------
+  !C ; m |ς- permission(i -> v) : spec permission(i -> t)
+  By induction on !C ; m |ς- v : μ t
+
+CASE
+  C ; m |ς- v' : μ t'
+  -------------------------------------
+  C ; m |ς- Some(v': t') : μ Option(t')
+  By induction on C ; m |ς- v' : μ t'
+
+CASE
+  C1 # ... # Cn = ..., S -> (m1 t1, ..., mn tn), ... ; ... ; ...
+  C1 ; m |ς- v1 : (m1 ⊔ μ) t1
+  ...
+  Cn ; m |ς- vn : (mn ⊔ μ) tn
+  --------------------------------------------------------------
+  C1 # ... # Cn ; m |ς- S(v1, ..., vn) : μ S
+  By induction on each Ci ; m |ς- vi : (mi ⊔ μ) ti
+
+CASE
+  D ; H ; Pb ; Γb, x -> μx tx ; mf |ς- eb : μb tb
+  D |- tx
+  function_body_context(O, L, P, Γ, Pb, Γb, u)
+  non_spec_function_modes(mf, μx, μb, tb)
+  ---------------------------------------------------------------------------------
+  D ; H ; P ; Γ ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+  We can apply this rule as-is for m'.
+
+CASE
+  !C, x -> μx tx ; mf |lax- eb : μb tb
+  !C |- tx
+  non_spec_function_modes(mf, μx, μb, tb)
+  ----------------------------------------------------------------------
+  !C ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+  We can apply this rule as-is for m'.
+
+CASE
+  !C, x -> μx tx ; mf |lax- eb : μb tb
+  !C |- tx
+  non_spec_function_modes(mf, μx, μb, tb)
+  ---------------------------------------------------------------------------------
+  !C ; m |ς- (λ[mf Once L] x: μx tx. eb) : mf shared (Fn[mf Once L] μx tx -> μb tb)
+  We can apply this rule as-is for m'.
+
+CASE
+  !Cb, x -> spec tx ; spec |ς- eb : spec tb
+  !C |- tx
+  function_body_context(Many, static, !C, !Cb, shared)
+  ------------------------------------------------------------------------------------------------
+  !C ; m |ς- (λ[spec Many static] x: spec tx. eb) : spec (Fn[spec Many static] spec tx -> spec tb)
+  We can apply this rule as-is for m'.
+
+==================================================================================================
+Lemma: Copy value
+
+If
+  C ; m |ς- v : mv u t
+  C ; mv |- t : Copy
+  ς = strict
+Then
+  C ; m |ς- v : mv u' t
+
+Proof by induction on C ; m |ς- v : mv u t
+
+CASES v = i | () | ⟂ | None(t')
+  Follows immediately from only applicable rule, which is one of:
+    !C ; m |ς- i : μ int
+    !C ; m |ς- () : μ Unit
+    !C ; m |ς- ⟂ : spec Never (this case cannot happen because spec != mv u)
+
+    !C |- t
+    --------------------------------
+    !C ; m |ς- None(t) : μ Option(t)
+
+CASE v = permission(i -> v')
+  The only typing rules with ς = strict for permission(i -> v') yield type t = permission(i -> t'),
+  which does not satisfy C ; mv |- t : Copy.
+  So this case cannot happen.
+
+CASE v = Some(v': t')
+    C ; m |ς- v' : μ t'
+    -------------------------------------
+    C ; m |ς- Some(v': t') : μ Option(t')
+  By induction on C ; m |ς- v' : μ t'
+
+CASE v = S(v1, ..., vn)
+    C1 # ... # Cn = ..., S -> (m1 t1, ..., mn tn), ... ; ... ; ... ; ...
+    C1 ; m |ς- v1 : (m1 ⊔ μ) t1
+    ...
+    Cn ; m |ς- vn : (mn ⊔ μ) tn
+    ------------------------------------------
+    C1 # ... # Cn ; m |ς- S(v1, ..., vn) : μ S
+  where μ = mv u
+  For any (mi ⊔ μ) = spec, no induction is needed.
+  For any (mi ⊔ μ) = mi' ui', apply induction to get:
+    Ci ; m |ς- vi : mi' u' ti
+  We can then reapply the typing rule to get:
+    C1 # ... # Cn ; m |ς- S(v1, ..., vn) : (mv u') S
+
+CASE v = λ[mf O L] x: μx tx. eb
+  There are four rules.
+  Two of the rules yield v : spec t rather than v : mv u t and therefore cannot happen here.
+  For the other two rules:
+  CASE
+      D ; H ; Pb ; Γb, x -> μx tx ; mf |ς- eb : μb tb
+      D |- tx
+      function_body_context(O, L, P, Γ, Pb, Γb, u)
+      non_spec_function_modes(mf, μx, μb, tb)
+      ---------------------------------------------------------------------------------
+      D ; H ; P ; Γ ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+    By the definition of C ; mv |- t : Copy, we must have O = Many
+    The definition of function_body_context "IF O = Once THEN u = linear",
+      which does not apply when O = Many.
+    Therefore, u is unconstrained here and we can simply reapply the typing rule with a different u':
+      D ; H ; P ; Γ ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u' (Fn[mf O L] μx tx -> μb tb)
+
+  CASE
+      !C, x -> μx tx ; mf |lax- eb : μb tb
+      !C |- tx
+      non_spec_function_modes(mf, μx, μb, tb)
+      ---------------------------------------------------------------------------------
+      !C ; m |ς- (λ[mf Once L] x: μx tx. eb) : mf shared (Fn[mf Once L] μx tx -> μb tb)
+    Given this, we can apply the laxity typing rule to change shared to u':
+      spec(!C) = spec(!C)
+      mode_of(mf u') = mode_of(mf shared)
+      !C ; m |lax- e : mf shared t
+      -------------------------------
+      !C ; m |lax- e : mf u' t
+
+==================================================================================================
+Lemma: Heap value
+If
+  |- D
+  D ; H ; P ; Γ ; m |ς- v : μ t
+  D ; exec |- t : Copy
+  |- t : static
+  spec(!Γ) = spec(!Γ')
+  ς = strict
+Then
+  P = !P
+  Γ = !Γ
+  D ; H ; !P' ; !Γ' ; m |ς- v : μ t
+
+Proof by induction on D ; H ; P ; Γ ; m |ς- v : μ t
+C = D ; H ; P ; Γ
+C' = !C' = D ; H ; !P' ; !Γ'
+
+CASES v = i | () | ⟂ | None(t')
+  Follows immediately from only applicable rule, which is one of:
+    !C ; m |ς- i : μ int
+    !C ; m |ς- () : μ Unit
+    !C ; m |ς- ⟂ : spec Never
+
+    !C |- t
+    --------------------------------
+    !C ; m |ς- None(t) : μ Option(t)
+
+CASE v = permission(i -> v)
+  Both applicable rules say t = permission(i -> t'), which does not satisfy D ; exec |- t : Copy
+  So this case can't happen
+
+CASE v = Some(v': t')
+    C ; m |ς- v' : μ t'
+    -------------------------------------
+    C ; m |ς- Some(v': t') : μ Option(t')
+  By induction on C ; m |ς- v' : μ t'
+
+CASE v = S(v1, ..., vn)
+    C1 # ... # Cn = ..., S -> (m1 t1, ..., mn tn), ... ; ... ; ... ; ...
+    C1 ; m |ς- v1 : (m1 ⊔ μ) t1
+    ...
+    Cn ; m |ς- vn : (mn ⊔ μ) tn
+    ------------------------------------------
+    C1 # ... # Cn ; m |ς- S(v1, ..., vn) : μ S
+  By |- D, we have D' |- d where:
+    d = S -> (m1 t1, ..., mn tn)
+    D' ; {} ; d |- t1
+    ...
+    D' ; {} ; d |- tn
+    m1 |- t1 : static
+    ...
+    mn |- tn : static
+    -----------------
+    D' |- d
+  For 1 <= i <= n, let:
+    Ci = D ; H ; Pi ; Γi
+  Note that:
+    spec(!Γi) = spec(!Γ) = spec(!Γ')
+  For 1 <= i <= n, let:
+    Ci' = D ; H ; !P' ; !Γ'
+  By induction:
+    C1' ; m |ς- v1 : (m1 ⊔ μ) t1
+    ...
+    Cn' ; m |ς- vn : (mn ⊔ μ) tn
+  and P1 = !P1, ..., Pn = !Pn
+  and Γ1 = !Γ1, ..., Γn = !Γn
+  By typing:
+    C1' # ... # Cn' ; m |ς- S(v1, ..., vn) : μ S
+
+CASE v = λ[m O L] x: μx tx. eb
+  There are four rules
+  CASE
+      D ; H ; Pb ; Γb, x -> μx tx ; mf |ς- eb : μb tb
+      D |- tx
+      function_body_context(O, L, P, Γ, Pb, Γb, u)
+      non_spec_function_modes(mf, μx, μb, tb)
+      ---------------------------------------------------------------------------------
+      D ; H ; P ; Γ ; m |ς- (λ[mf O L] x: μx tx. eb) : mf u (Fn[mf O L] μx tx -> μb tb)
+    Out of the function_body_context cases for O and L,
+      only the O = Many, L = static case satisfies D ; exec |- t : Copy and |- t : static, so:
+      P = !P AND Pb = {} AND Γ = !Γ AND Γb = spec(!Γ)
+    !P' and !Γ' also satisfy function_body_context:
+      Pb = {} AND Γb = spec(!Γ')
+    So we can simply reapply the rule with !P' and !Γ'
+  CASE
+      !C, x -> μx tx ; mf |lax- eb : μb tb
+      !C |- tx
+      non_spec_function_modes(mf, μx, μb, tb)
+      ----------------------------------------------------------------------
+      !C ; m |ς- (λ[mf O L] x: μx tx. eb) : spec (Fn[mf O L] μx tx -> μb tb)
+    By laxity typing rule:
+      !C', x -> μx tx ; mf |lax- eb : μb tb
+    Then we can reapply the rule with !C'
+  CASE
+      !C, x -> μx tx ; mf |lax- eb : μb tb
+      !C |- tx
+      non_spec_function_modes(mf, μx, μb, tb)
+      ---------------------------------------------------------------------------------
+      !C ; m |ς- (λ[mf Once L] x: μx tx. eb) : mf shared (Fn[mf Once L] μx tx -> μb tb)
+    By laxity typing rule:
+      !C', x -> μx tx ; mf |lax- eb : μb tb
+    Then we can reapply the rule with !C'
+  CASE
+      !Cb, x -> spec tx ; spec |ς- eb : spec tb
+      !C |- tx
+      function_body_context(Many, static, !C, !Cb, shared)
+      ------------------------------------------------------------------------------------------------
+      !C ; m |ς- (λ[spec Many static] x: spec tx. eb) : spec (Fn[spec Many static] spec tx -> spec tb)
+    By function_body_context:
+      Pb = {} AND Γb = spec(!Γ)
+    !P and !Γ also satisfy function_body_context:
+      Pb = {} AND Γb = spec(!Γ')
+    So we can simply reapply the rule with !P and !Γ
+
+==================================================================================================
+Lemma: defaults_to exists
+
+If
+  |- D
+  D |- t
+Then
+  There is a v such that D |- t defaults_to v.
+
+By Lemma: defaults_to exists expanded
+
+==================================================================================================
+Lemma: defaults_to exists expanded
+
+Let |D| denote the number of d declarations in D
+
+If
+  D = D0, Drec, Dpos
+  D = d1 ... dn
+  |Drec| + |Dpos| <= 1
+  Drec = dn or Drec = {}
+  Dpos = dn or Dpos = {}
+  |- D
+  D0 ; Drec ; Dpos |- t
+Then
+  There is a v such that D |- t defaults_to v.
+
+By induction on lexicographic pair (|D0| + |Drec|, t).
+
+CASES t = int | Unit | Never | Option(t') | Fn[exec O L] μ1 t1 -> μ2 t2
+  These are base cases that immediately have a defaults_to:
+  D |- int defaults_to 0
+  D |- Unit defaults_to ()
+  D |- Never defaults_to ⟂
+  D |- Option(t) defaults_to None(t)
+  D |- Fn[m O L] μ1 t1 -> μ2 t2 defaults_to λ[m O L] x: μ1 t1. default(t2)
+  (Note: for Fn, default(t2) is a self-contained expression;
+    it does not use defaults_to, and it does not require induction here.)
+
+CASE t = permission(i -> t')
+  By induction on t' (keeping D0 ; Drec ; Dpos the same in the induction, reducing t to t' in induction)
+    D |- t' defaults_to v'
+    --------------------------------------------------------
+    D |- permission(i -> t') defaults_to permission(i -> v')
+
+CASE t = S
+  This is the interesting case.  By the rule for D0 ; Drec ; Dpos |- t we have:
+    D0, Drec = ..., dj, ...
+    -----------------------
+    D0 ; Drec ; Dpos |- S
+  where dj = S -> (m1 t1, ..., mn tn)
+  Let D = d1 ... di dj dk ... dn
+  Unrolling the definition of |- D gives us:
+    d1 ... di |- dj
+  Note that d1 ... di is a subsequence of D0, since Drec and Dpos can only contain the last element of D.
+  Let D0' = d1 ... di
+    D0' |- dj
+  By the definition of D0' |- dj
+    dj = S -> (m1 t1, ..., mn tn)
+    D0' ; {} ; dj |- t1
+    ...
+    D0' ; {} ; dj |- tn
+    m1 |- t1 : static
+    ...
+    mn |- tn : static
+    -----------------
+    D0' |- dj
+  Let Drec' = {}. We can rewrite the typings of t1 ... tn above as:
+    D0' ; Drec' ; dj |- t1
+    ...
+    D0' ; Drec' ; dj |- tn
+  Since we know D0, Drec = ..., dj, ... we know dj is either in D0 or Drec
+  CASE dj in D0:
+    |D0'| < |D0|, since D0' is a subsequence of D0 and D0' does not contain dj
+  CASE dj in Drec:
+    |D0'| <= |D0|, since D0' is a subsequence of D0
+    |Drec'| < |Drec|, since 0 < 1
+  In either case, |D0'| + |Drec'| < |D0| + |Drec|
+  So we can use induction on the typings of t1 ... tn:
+    There is a v1 such that D0', Drec', dj |- t1 defaults_to v1.
+    ...
+    There is a vn such that D0', Drec', dj |- tn defaults_to vn.
+  By Lemma: datatypes type weakening:
+    There is a v1 such that D |- t1 defaults_to v1.
+    ...
+    There is a vn such that D |- tn defaults_to vn.
+  By defaults_to rule:
+    D = ..., S -> (m1 t1, ..., mn tn), ...
+    D |- t1 defaults_to v1
+    ...
+    D |- tn defaults_to vn
+    ---------------------------------
+    D |- S defaults_to S(v1, ..., vn)
+
+==================================================================================================
+Lemma: defaults_to typed
+If
+  !C = D ; H ; !P ; !Γ
+  D |- t
+  D |- t defaults_to v
+Then
+  !C ; m |ς- v : spec t
+
+By induction on D |- t defaults_to v
+
+CASE D |- int defaults_to 0
+  By typing rule:
+    !C ; m |ς- 0 : μ int
+
+CASE D |- Unit defaults_to ()
+  By typing rule:
+    !C ; m |ς- () : μ Unit
+
+CASE D |- Never defaults_to ⟂
+  By typing rule:
+    !C ; m |ς- ⟂ : spec Never
+
+CASE
+    D |- t defaults_to v
+    ------------------------------------------------------
+    D |- permission(i -> t) defaults_to permission(i -> v)
+  By induction:
+    !C ; m |ς- v : spec t
+  By typing rule (dummy rule):
+    !C ; m |ς- v : μ t
+    -------------------------------------------------------
+    !C ; m |ς- permission(i -> v) : spec permission(i -> t)
+
+CASE D |- Option(t) defaults_to None(t)
+  By typing rule:
+    !C |- t
+    --------------------------------
+    !C ; m |ς- None(t) : μ Option(t)
+
+CASE
+    D = ..., S -> (m1 t1, ..., mn tn), ...
+    D |- t1 defaults_to v1
+    ...
+    D |- tn defaults_to vn
+    ---------------------------------
+    D |- S defaults_to S(v1, ..., vn)
+  By induction:
+    !C ; m |ς- v1 : spec t1
+    ...
+    !C ; m |ς- vn : spec tn
+  By typing rule:
+    !C ; m |ς- S(v1, ..., vn) : spec S
+
+CASE D |- Fn[mf O L] μx tx -> μb tb defaults_to λ[mf O L] x: μx tx. default(tb)
+  From the three rules for D |- Fn[mf O L] μx tx -> μb tb:
+    is_unrestricted(μx, tb)
+    mf ⊑ mode_of(μx)
+    mf ⊑ mode_of(μb)
+  CASE mf = spec
+    From the rule for D |- Fn[spec O L] μx tx -> μb tb:
+      O = Many
+      L = static
+    Let !Cb = D ; H ; {} ; spec(!Γ)
+    By typing rule:
+      !Cb, x -> spec tx |- tb
+      ------------------------------------------------
+      !Cb, x -> spec tx ; mf |ς- default(tb) : spec tb
+    By typing rule (main spec rule):
+      !Cb, x -> spec tx ; spec |ς- default(tb) : spec tb
+      !C |- tx
+      function_body_context(Many, static, !C, !Cb, shared)
+      ---------------------------------------------------------------------------------------------------------
+      !C ; m |ς- (λ[spec Many static] x: spec tx. default(tb)) : spec (Fn[spec Many static] spec tx -> spec tb)
+  CASE mf != spec
+    By typing rule:
+      !C, x -> spec tx |- tb
+      -------------------------------------------------
+      !C, x -> spec tx ; mf |lax- default(tb) : spec tb
+    By laxity typing rule:
+      !C, x -> μx tx ; mf |lax- default(tb) : spec tb
+    By typing rule (dummy spec rule):
+      !C, x -> μx tx ; mf |lax- default(tb) : μb tb
+      !C |- tx
+      non_spec_function_modes(mf, μx, μb, tb)
+      -------------------------------------------------------------------------------
+      !C ; m |ς- (λ[mf O L] x: μx tx. default(tb)) : spec (Fn[mf O L] μx tx -> μb tb)
+
+==================================================================================================
+Lemma: datatypes type weakening
+
+If
+  D = d1 ... di
+  D' = d1 ... di dj ... dn
+  |- D'
+  D; Drec; DPos |- t
+  domain(Drec, Dpos) disjoint with domain(D')
+Then
+  D'; Drec; DPos |- t
+
+By induction on lexicographic pair (|D'|, t)
+
+Base case for |D'|:
+  D' = D
+
+Inductive case for |D'|:
+  D' = d1 ... di dj ... dm dn
+  Let Dm = d1 ... di dj ... dm, so D' = Dm dn
+  By induction:
+    Dm; Drec; DPos |- t
+  By induction on t, each case of Dm; Drec; DPos |- t stays the same when dn is added to Dm, so D'; Drec; DPos |- t
+
+==================================================================================================
