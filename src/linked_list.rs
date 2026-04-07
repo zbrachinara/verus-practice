@@ -178,7 +178,18 @@ impl <T> List<T> {
         self.wf(),
         self@ == old(self)@.insert(0, elem)
     {
-        assume(false)
+        match &self.first {
+            Some(link) => {
+
+            },
+            None => {
+                let (pptr, pptr_perm) = PPtr::new(Node{
+                    value: elem,
+                    next: None
+                });
+                self.pptr_perms.borrow_mut().tracked_insert()
+            },
+        }
     }
 
     pub fn append(&mut self, elem : T)
