@@ -1,4 +1,7 @@
-use vstd::cell::{self, CellId, MemContents, PCell};
+use core::mem::MaybeUninit;
+
+use vstd::cell::pcell::{self, PCell};
+use vstd::cell::CellId;
 use vstd::prelude::*;
 use vstd::simple_pptr::{self as pptr, PPtr};
 
@@ -14,23 +17,21 @@ struct Node {
 // TODO assign based on size of ptr in target or find a way to declare it > 0
 global layout Node is size == 8, align == 8;
 
-type CellPerms = Map<nat, cell::PointsTo<PPtr<Node>>>;
+type CellPerms = Map<nat, pcell::PointsTo<PPtr<Node>>>;
 type PPtrPerms = Map<nat, pptr::PointsTo<Node>>;
 
 struct Permissions {
-    cell : Map<nat, cell::PointsTo<PPtr<Node>>>,
+    cell : Map<nat, pcell::PointsTo<PPtr<Node>>>,
     pptr : Map<nat, pptr::PointsTo<Node>>,
 }
 
 impl Permissions {
     spec fn contains(&self, ix : nat) -> bool {
-        let this_cell_perm = self.cell[ix];
+        let this_cell_perm = self.cell.index(ix);
         let this_ptr = this_cell_perm.value();
 
         // This list has authoritative access to the node,
         &&& self.cell.contains_key(ix)
-        // And this node surely contains a next pointer.
-        &&& this_cell_perm.is_init()
         // If the pointer's address is null,
         &&& this_ptr.addr() == 0 ==> {
             // The pointee is not initialized because its address is null,
@@ -42,15 +43,15 @@ impl Permissions {
         }
         // If the pointer points to another node,
         &&& this_ptr.addr() != 0 ==> {
-            let this_ptr_perm = self.pptr[ix];
-            let next_cell_perm = self.cell[ix + 1];
+            let this_ptr_perm = self.pptr.index(ix);
+            let next_cell_perm = self.cell.index(ix + 1);
 
             // The list has authoritative index to the pointee
             &&& self.pptr.contains_key(ix)
             // The pointee is pointed to by the pointer contained in this cell
             &&& this_ptr_perm.pptr() == this_ptr
             // The pointer is initialized
-            &&& this_ptr_perm.mem_contents() matches MemContents::Init(next_node)
+            &&& this_ptr_perm.mem_contents() matches pptr::MemContents::Init(next_node)
             // And we have permissions for the pointee
             &&& next_node.next.id() == next_cell_perm.id()
         }
@@ -121,7 +122,7 @@ impl Permissions {
 
 struct List {
     first : PCell<PPtr<Node>>,
-    cell_perms : Tracked<Map<nat, cell::PointsTo<PPtr<Node>>>>,
+    cell_perms : Tracked<Map<nat, pcell::PointsTo<PPtr<Node>>>>,
     pptr_perms : Tracked<Map<nat, pptr::PointsTo<Node>>>,
 }
 
