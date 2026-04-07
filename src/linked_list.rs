@@ -1,10 +1,12 @@
 use core::mem::MaybeUninit;
+use std::borrow::{Borrow, BorrowMut};
+use std::intrinsics::unreachable;
 
 use vstd::cell::pcell::{self, PCell};
-use vstd::cell::CellId;
+use vstd::cell::{CellId, PointsTo};
 use vstd::pervasive::arbitrary;
-use vstd::{invariant, prelude::*};
 use vstd::simple_pptr::{self as pptr, PPtr};
+use vstd::{assert_by_contradiction, invariant, prelude::*};
 
 verus! {
 
@@ -155,7 +157,7 @@ impl <T> List<T> {
     }
 
     pub fn new() -> (out : Self)
-    ensures 
+    ensures
         out.wf(),
         out.view().len() == 0
     {
@@ -173,7 +175,18 @@ impl <T> List<T> {
         self.wf(),
         self@ == old(self)@.insert(0, elem)
     {
-        assume(false)
+        match &self.first {
+            Some(link) => {
+
+            },
+            None => {
+                let (ptr, ptr_perm) = PPtr::new(Node {
+                    value: elem,
+                    next: None,
+                });
+                let tracked pptr_perm = self.pptr_perms.borrow_mut().tracked_insert(0, Some(ptr_perm));
+            },
+        }
     }
 
     pub fn append(&mut self, elem : T)
@@ -207,9 +220,9 @@ impl <T> List<T> {
         out
     }
 
-    pub fn get(&self, i : usize) -> (out : &T)
+    pub fn get(&self, i : usize) -> (out : &Option<T>)
     requires self.wf()
-    ensures self@[i as int] == out
+    ensures self@[i as int] == out.unwrap()
     {
         assume(false);
         unreached()
