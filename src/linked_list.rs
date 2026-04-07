@@ -1,4 +1,5 @@
 use core::mem::MaybeUninit;
+<<<<<<< HEAD
 use std::borrow::{Borrow, BorrowMut};
 use std::intrinsics::unreachable;
 
@@ -7,6 +8,14 @@ use vstd::cell::{CellId, PointsTo};
 use vstd::pervasive::arbitrary;
 use vstd::simple_pptr::{self as pptr, PPtr};
 use vstd::{assert_by_contradiction, invariant, prelude::*};
+=======
+use std::borrow::BorrowMut;
+
+use vstd::cell::pcell::{self, PCell};
+use vstd::cell::CellId;
+use vstd::simple_pptr::{self as pptr, PPtr};
+use vstd::{invariant, prelude::*};
+>>>>>>> 2bce0e552c1d13856394420ce52ae29e088a05ba
 
 verus! {
 
@@ -17,15 +26,15 @@ struct Node<T> {
 }
 
 struct Permissions<T> {
-    cell : Seq<Option<pcell::PointsTo<PPtr<Node<T>>>>>,
-    pptr : Seq<Option<pptr::PointsTo<Node<T>>>>,
+    cell : Seq<pcell::PointsTo<PPtr<Node<T>>>>,
+    pptr : Seq<pptr::PointsTo<Node<T>>>,
 }
 
 impl <T> Permissions<T> {
     /// Conditions on which we rely when we own a link in the list
     spec fn contains(&self, ix : int) -> bool {
-        // We must own the allocation
-        &&& self.cell.index(ix) matches Some(this_cell_perm)
+        let this_cell_perm = self.cell.index(ix);
+
         // Suppose that the pointer is null
         &&& this_cell_perm.value().addr() == 0 ==> {
             // Then there must be no allocations beyond this pointer.
@@ -33,14 +42,17 @@ impl <T> Permissions<T> {
         }
         // Suppose instead that the pointer is nonnull
         &&& this_cell_perm.value().addr() != 0 ==> {
-            // Then we hold a pointer at this index
-            &&& self.pptr.index(ix) matches Some(this_pptr_perm)
+            let this_pptr_perm = self.pptr.index(ix);
+
+            &&& self.pptr.len() >= ix
             // That pointer must be the same as the one in the cell
             &&& this_pptr_perm.pptr() == this_cell_perm.value()
             // The pointee must be initialized
             &&& this_pptr_perm.mem_contents() matches pptr::MemContents::Init(next_node)
             // In fact, suppose that there is a cell permission for the next index
-            &&& self.cell.index(ix + 1) matches Some(next_cell_perm) ==> {
+            &&& self.cell.len() > ix ==> {
+                let next_cell_perm = self.cell.index(ix + 1);
+
                 // That permission must correspond to the one in the next field of the pointee
                 &&& next_node.next matches Some(next_node_alloc)
                 // So their unique IDs must be equal
@@ -50,7 +62,7 @@ impl <T> Permissions<T> {
     }
 
     spec fn based_at(self, ix : int, permission : CellId) -> bool {
-        self.contains(ix) && self.cell[ix].unwrap().id() == permission
+        self.contains(ix) && self.cell[ix].id() == permission
     }
 
     // spec fn last(self, ix : nat) -> bool {
@@ -115,8 +127,8 @@ impl <T> Permissions<T> {
     // }
 }
 
-type CellPerms<T> = Tracked<Seq<Option<pcell::PointsTo<PPtr<Node<T>>>>>>;
-type PPtrPerms<T> = Tracked<Seq<Option<pptr::PointsTo<Node<T>>>>>;
+type CellPerms<T> = Tracked<Seq<pcell::PointsTo<PPtr<Node<T>>>>>;
+type PPtrPerms<T> = Tracked<Seq<pptr::PointsTo<Node<T>>>>;
 
 pub struct List<T> {
     first : Link<T>,
@@ -153,7 +165,7 @@ impl <T> List<T> {
     pub closed spec fn view(self) -> Seq<T>
         recommends self.wf()
     {
-        self.pptr_perms@.map(|i, p : Option<pptr::PointsTo<Node<T>>>| p.unwrap().value().value)
+        self.pptr_perms@.map(|i, p : pptr::PointsTo<Node<T>>| p.value().value)
     }
 
     pub fn new() -> (out : Self)
@@ -168,7 +180,7 @@ impl <T> List<T> {
         }
     }
 
-    pub fn push(&mut self, elem : T) 
+    pub fn push(&mut self, elem : T)
     requires
         old(self).wf(),
     ensures
@@ -196,7 +208,18 @@ impl <T> List<T> {
         self.wf(),
         self@ == old(self)@.push(elem)
     {
-        assume(false)
+        match &self.first {
+            None => self.push(elem),
+            Some(link) => {
+                let mut link = link;
+                let ghost mut link_ix : int = 0;
+
+                assume(self.cell_perms.len() > 100);
+                let tracked mut link_cell_perm = self.cell_perms.borrow_mut().tracked_borrow(link_ix);
+                
+                assume(false)
+            }
+        }
     }
 
     pub fn of_vec(mut xs : Vec<T>) -> (out : Self )
@@ -206,7 +229,7 @@ impl <T> List<T> {
     {
         let ghost old_xs = xs@;
         let mut out = Self::new();
-        
+
         while !xs.is_empty()
         invariant
             out.wf(),
