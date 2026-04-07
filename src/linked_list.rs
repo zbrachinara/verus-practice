@@ -7,9 +7,10 @@ use vstd::simple_pptr::{self as pptr, PPtr};
 
 verus! {
 
+type Link<T> = Option<PCell<PPtr<Node<T>>>>;
 struct Node<T> {
     value : T,
-    next : Option<PCell<PPtr<Node<T>>>>,
+    next : Link<T>,
 }
 
 struct Permissions<T> {
@@ -114,8 +115,8 @@ impl <T> Permissions<T> {
 type CellPerms<T> = Tracked<Seq<Option<pcell::PointsTo<PPtr<Node<T>>>>>>;
 type PPtrPerms<T> = Tracked<Seq<Option<pptr::PointsTo<Node<T>>>>>;
 
-struct List<T> {
-    first : PCell<PPtr<Node<T>>>,
+pub struct List<T> {
+    first : Link<T>,
     cell_perms : CellPerms<T>,
     pptr_perms : PPtrPerms<T>,
 }
@@ -127,18 +128,51 @@ impl <T> List<T> {
             pptr : self.pptr_perms@,
         }
     }
-    pub closed spec fn wf(self) -> bool { self.permissions().mirrors(self.first.id()) }
+    pub closed spec fn wf(self) -> bool {
+        match self.first {
+            Some(first) => self.permissions().mirrors(first.id()),
+            None => self.cell_perms.len() == 0 && self.pptr_perms.len() == 0,
+        }
+    }
     pub closed spec fn len(self) -> nat { self.permissions().len() }
-    pub closed spec fn node_at(self, node_ptr : PPtr<Node<T>>, index : int) -> bool {
-        index < self.len() && self.pptr_perms@[index].unwrap().pptr() == node_ptr
-    }
-    pub open spec fn contains_node(self, node_ptr : PPtr<Node<T>>) -> bool {
-        exists|y| self.node_at(node_ptr, y)
-    }
-    pub open spec fn index_of(self, node_ptr : PPtr<Node<T>>) -> int
-    recommends self.contains_node(node_ptr)
+    // closed spec fn node_at(self, node_ptr : PPtr<Node<T>>, index : int) -> bool {
+    //     index < self.len() && self.pptr_perms@[index].unwrap().pptr() == node_ptr
+    // }
+    // closed spec fn contains_node(self, node_ptr : PPtr<Node<T>>) -> bool {
+    //     exists|y| self.node_at(node_ptr, y)
+    // }
+    // closed spec fn index_of(self, node_ptr : PPtr<Node<T>>) -> int
+    // recommends self.contains_node(node_ptr)
+    // {
+    //     choose|y| self.node_at(node_ptr, y)
+    // }
+
+    pub closed spec fn view(self) -> Seq<T>
+        recommends self.wf()
     {
-        choose|y| self.node_at(node_ptr, y)
+        self.pptr_perms@.map(|i, p : Option<pptr::PointsTo<Node<T>>>| p.unwrap().value().value)
+    }
+
+    pub fn new() -> (out : Self)
+    ensures 
+        out.wf(),
+        out.view().len() == 0
+    {
+        Self {
+            first: None,
+            cell_perms: Tracked(Seq::tracked_empty()),
+            pptr_perms: Tracked(Seq::tracked_empty())
+        }
+    }
+
+    pub fn push(&mut self, elem : T) 
+    requires
+        old(self).wf(),
+    ensures
+        self.wf(),
+        self@ == old(self)@.insert(0, elem)
+    {
+        assume(false)
     }
 }
 }
