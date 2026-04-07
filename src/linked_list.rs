@@ -7,23 +7,17 @@ use vstd::simple_pptr::{self as pptr, PPtr};
 
 verus! {
 
-#[repr(transparent)]
-struct Node {
-    next : PCell<PPtr<Node>>,
+struct Node<T> {
+    value : T,
+    next : PCell<PPtr<Node<T>>>,
 }
 
-// TODO assign based on size of ptr in target or find a way to declare it > 0
-global layout Node is size == 8, align == 8;
-
-type CellPerms = Map<nat, pcell::PointsTo<PPtr<Node>>>;
-type PPtrPerms = Map<nat, pptr::PointsTo<Node>>;
-
-struct Permissions {
-    cell : Seq<Option<pcell::PointsTo<PPtr<Node>>>>,
-    pptr : Seq<Option<pptr::PointsTo<Node>>>,
+struct Permissions<T> {
+    cell : Seq<Option<pcell::PointsTo<PPtr<Node<T>>>>>,
+    pptr : Seq<Option<pptr::PointsTo<Node<T>>>>,
 }
 
-impl Permissions {
+impl <T> Permissions<T> {
     /// Conditions on which we rely when we own a link in the list
     spec fn contains(&self, ix : int) -> bool {
         // We must own the allocation
@@ -114,14 +108,17 @@ impl Permissions {
     // }
 }
 
-struct List {
-    first : PCell<PPtr<Node>>,
-    cell_perms : Tracked<Seq<Option<pcell::PointsTo<PPtr<Node>>>>>,
-    pptr_perms : Tracked<Seq<Option<pptr::PointsTo<Node>>>>,
+type CellPerms<T> = Tracked<Seq<Option<pcell::PointsTo<PPtr<Node<T>>>>>>;
+type PPtrPerms<T> = Tracked<Seq<Option<pptr::PointsTo<Node<T>>>>>;
+
+struct List<T> {
+    first : PCell<PPtr<Node<T>>>,
+    cell_perms : CellPerms<T>,
+    pptr_perms : PPtrPerms<T>,
 }
 
-impl List {
-    spec fn permissions(self) -> Permissions {
+impl <T> List<T> {
+    spec fn permissions(self) -> Permissions<T> {
         Permissions {
             cell : self.cell_perms@,
             pptr : self.pptr_perms@,
@@ -129,13 +126,13 @@ impl List {
     }
     pub closed spec fn wf(self) -> bool { self.permissions().mirrors(self.first.id()) }
     pub closed spec fn len(self) -> nat { self.permissions().len() }
-    pub closed spec fn node_at(self, node_ptr : PPtr<Node>, index : int) -> bool {
+    pub closed spec fn node_at(self, node_ptr : PPtr<Node<T>>, index : int) -> bool {
         index < self.len() && self.pptr_perms@[index].unwrap().pptr() == node_ptr
     }
-    pub open spec fn contains_node(self, node_ptr : PPtr<Node>) -> bool {
+    pub open spec fn contains_node(self, node_ptr : PPtr<Node<T>>) -> bool {
         exists|y| self.node_at(node_ptr, y)
     }
-    pub open spec fn index_of(self, node_ptr : PPtr<Node>) -> int
+    pub open spec fn index_of(self, node_ptr : PPtr<Node<T>>) -> int
     recommends self.contains_node(node_ptr)
     {
         choose|y| self.node_at(node_ptr, y)
