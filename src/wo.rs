@@ -1,7 +1,7 @@
 use vstd::prelude::*;
 
 
-verus!(
+verus!{
     proof fn wo_aux(prop : spec_fn(nat) -> bool, x : nat)
     requires
         prop(x)
@@ -26,4 +26,4 @@ verus!(
     {
         wo_aux(prop, choose|x| #[trigger] prop(x));
     }
-);
+}
