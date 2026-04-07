@@ -1,9 +1,10 @@
 use vstd::{prelude::*, simple_pptr::PPtr};
 
+mod linked_list;
 mod parnolib;
 mod wo;
 
-verus!{
+verus! {
 
 struct DoublyLinkedList<T> {
     value: T,
