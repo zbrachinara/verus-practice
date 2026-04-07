@@ -2,7 +2,7 @@ use core::mem::MaybeUninit;
 use std::borrow::BorrowMut;
 
 use vstd::cell::pcell::{self, PCell};
-use vstd::cell::CellId;
+use vstd::cell::{CellId, MemContents};
 use vstd::simple_pptr::{self as pptr, PPtr};
 use vstd::{invariant, prelude::*};
 
@@ -28,18 +28,24 @@ impl <T> Permissions<T> {
         // We own the container of this pointer
         &&& self.cell.len() > ix
         // The pointer must be nonnull
-        &&& this_cell_perm.value().addr() != 0
+        &&& this_pptr_perm.is_init()
         // That pointer must be the same as the one in the cell
         &&& self.pptr.len() > ix
         &&& this_pptr_perm.pptr() == this_cell_perm.value()
         // The pointee must be initialized
         &&& this_pptr_perm.mem_contents() matches pptr::MemContents::Init(next_node)
-        // In fact, suppose that there is a cell permission for the next index
-        &&& self.cell.len() > ix + 1 ==> {
-            let next_cell_perm = self.cell.index(ix + 1);
-            // That permission must correspond to the one in the next field of the pointee
-            &&& next_node.next matches Some(next_node_alloc)
-            &&& next_node_alloc.id() == next_cell_perm.id()
+        &&& match next_node.next {
+            // In fact, suppose that there is a cell permission for the next index.
+            Some(next_node) => {
+                // That permission must correspond to the one in the next field of the pointee
+                &&& self.cell.len() > ix + 1
+                &&& self.cell.index(ix + 1).id() == next_node.id()
+            }
+            // If instead there is no next cell permission,
+            None => {
+                // then this is the last cell.
+                &&& self.cell.len() == self.pptr.len() == ix + 1
+            }
         }
     }
 
@@ -183,14 +189,38 @@ impl <T> List<T> {
             None => self.push(elem),
             Some(link) => {
                 let mut link = link;
+
                 let ghost mut link_ix : int = 0;
+                let tracked mut link_cell_perm = self.cell_perms.borrow().tracked_borrow(link_ix);
+                let tracked mut link_pptr_perm = self.pptr_perms.borrow().tracked_borrow(link_ix);
 
-                assert(self.permissions().mirrors(link.id()));
-                assert(self.permissions().contains(0));
-                // assert()
+                while link
+                    .read(Tracked(link_cell_perm))
+                    .borrow(Tracked(link_pptr_perm))
+                    .next
+                    .is_some()
+                invariant
+                    self.wf(),
+                    self.permissions().contains(link_ix),
+                    self.permissions().cell.index(link_ix) == link_cell_perm,
+                    self.permissions().pptr.index(link_ix) == link_pptr_perm,
+                    link_cell_perm.id() == link.id(),
 
-                assume(self.cell_perms.len() > 0);
-                let tracked mut link_cell_perm = self.cell_perms.borrow_mut().tracked_borrow(link_ix);
+                    0 <= link_ix <= self.permissions().len(),
+                decreases self.permissions().len() - link_ix
+                {
+                    let next_cell = link
+                        .read(Tracked(link_cell_perm))
+                        .borrow(Tracked(link_pptr_perm));
+                    link = next_cell.next.as_ref().unwrap();
+                    
+                    assert(self.permissions().contains(link_ix + 1));
+                    proof {
+                        link_ix = link_ix + 1;
+                        link_cell_perm = self.cell_perms.borrow().tracked_borrow(link_ix);
+                        link_pptr_perm = self.pptr_perms.borrow().tracked_borrow(link_ix);
+                    }
+                }
 
                 assume(false)
             }
