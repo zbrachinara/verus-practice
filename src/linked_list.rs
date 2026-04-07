@@ -24,6 +24,8 @@ impl <T> Permissions<T> {
     spec fn contains(&self, ix : int) -> bool {
         let this_cell_perm = self.cell.index(ix);
 
+        // We own the container of this pointer
+        &&& self.cell.len() >= ix
         // Suppose that the pointer is null
         &&& this_cell_perm.value().addr() == 0 ==> {
             // Then there must be no allocations beyond this pointer.
@@ -191,6 +193,8 @@ impl <T> List<T> {
             Some(link) => {
                 let mut link = link;
                 let ghost mut link_ix : int = 0;
+
+                assert(self.permissions().mirrors(link.id()));
 
                 assume(self.cell_perms.len() > 100);
                 let tracked mut link_cell_perm = self.cell_perms.borrow_mut().tracked_borrow(link_ix);
