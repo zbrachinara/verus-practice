@@ -1,21 +1,10 @@
 use core::mem::MaybeUninit;
-<<<<<<< HEAD
-use std::borrow::{Borrow, BorrowMut};
-use std::intrinsics::unreachable;
-
-use vstd::cell::pcell::{self, PCell};
-use vstd::cell::{CellId, PointsTo};
-use vstd::pervasive::arbitrary;
-use vstd::simple_pptr::{self as pptr, PPtr};
-use vstd::{assert_by_contradiction, invariant, prelude::*};
-=======
 use std::borrow::BorrowMut;
 
 use vstd::cell::pcell::{self, PCell};
 use vstd::cell::CellId;
 use vstd::simple_pptr::{self as pptr, PPtr};
 use vstd::{invariant, prelude::*};
->>>>>>> 2bce0e552c1d13856394420ce52ae29e088a05ba
 
 verus! {
 
@@ -187,18 +176,7 @@ impl <T> List<T> {
         self.wf(),
         self@ == old(self)@.insert(0, elem)
     {
-        match &self.first {
-            Some(link) => {
-
-            },
-            None => {
-                let (ptr, ptr_perm) = PPtr::new(Node {
-                    value: elem,
-                    next: None,
-                });
-                let tracked pptr_perm = self.pptr_perms.borrow_mut().tracked_insert(0, Some(ptr_perm));
-            },
-        }
+        assume(false)
     }
 
     pub fn append(&mut self, elem : T)
@@ -216,7 +194,7 @@ impl <T> List<T> {
 
                 assume(self.cell_perms.len() > 100);
                 let tracked mut link_cell_perm = self.cell_perms.borrow_mut().tracked_borrow(link_ix);
-                
+
                 assume(false)
             }
         }
@@ -243,9 +221,9 @@ impl <T> List<T> {
         out
     }
 
-    pub fn get(&self, i : usize) -> (out : &Option<T>)
+    pub fn get(&self, i : usize) -> (out : &T)
     requires self.wf()
-    ensures self@[i as int] == out.unwrap()
+    ensures self@[i as int] == out
     {
         assume(false);
         unreached()
