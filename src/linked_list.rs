@@ -1,10 +1,10 @@
 use core::mem::MaybeUninit;
+use std::borrow::BorrowMut;
 
 use vstd::cell::pcell::{self, PCell};
 use vstd::cell::CellId;
-use vstd::pervasive::arbitrary;
-use vstd::{invariant, prelude::*};
 use vstd::simple_pptr::{self as pptr, PPtr};
+use vstd::{invariant, prelude::*};
 
 verus! {
 
@@ -155,7 +155,7 @@ impl <T> List<T> {
     }
 
     pub fn new() -> (out : Self)
-    ensures 
+    ensures
         out.wf(),
         out.view().len() == 0
     {
@@ -166,7 +166,7 @@ impl <T> List<T> {
         }
     }
 
-    pub fn push(&mut self, elem : T) 
+    pub fn push(&mut self, elem : T)
     requires
         old(self).wf(),
     ensures
@@ -183,7 +183,18 @@ impl <T> List<T> {
         self.wf(),
         self@ == old(self)@.push(elem)
     {
-        assume(false)
+        match &self.first {
+            None => self.push(elem),
+            Some(link) => {
+                let mut link = link;
+                let ghost mut link_ix : int = 0;
+
+                assume(self.cell_perms.len() > 100);
+                let tracked mut link_cell_perm = self.cell_perms.borrow_mut().tracked_borrow(link_ix);
+                
+                assume(false)
+            }
+        }
     }
 
     pub fn of_vec(mut xs : Vec<T>) -> (out : Self )
@@ -193,7 +204,7 @@ impl <T> List<T> {
     {
         let ghost old_xs = xs@;
         let mut out = Self::new();
-        
+
         while !xs.is_empty()
         invariant
             out.wf(),
