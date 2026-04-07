@@ -2,6 +2,7 @@ use core::mem::MaybeUninit;
 
 use vstd::cell::pcell::{self, PCell};
 use vstd::cell::CellId;
+use vstd::pervasive::arbitrary;
 use vstd::prelude::*;
 use vstd::simple_pptr::{self as pptr, PPtr};
 
@@ -173,6 +174,33 @@ impl <T> List<T> {
         self@ == old(self)@.insert(0, elem)
     {
         assume(false)
+    }
+
+    pub fn append(&mut self, elem : T)
+    requires
+        old(self).wf(),
+    ensures
+        self.wf(),
+        self@ == old(self)@.push(elem)
+    {
+        assume(false)
+    }
+
+    pub fn of_vec(xs : Vec<T>) -> (out : Self )
+    ensures
+        out.wf(),
+        xs@ == out@
+    {
+        assume(false);
+        unreached()
+    }
+
+    pub fn get(&self, i : usize) -> (out : &T)
+    requires self.wf()
+    ensures self@[i as int] == out
+    {
+        assume(false);
+        unreached()
     }
 }
 }
