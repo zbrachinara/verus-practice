@@ -108,7 +108,7 @@ tokenized_state_machine!{FifoQueue<T> {
                 self.tail == tail
             }
         }
-        && match self.consumer {
+        &&& match self.consumer {
             ConsumerState::Consuming(head) => {
                 self.head == head
             }
@@ -180,6 +180,16 @@ tokenized_state_machine!{FifoQueue<T> {
             self.valid_storage_at_idx(i))
     }
 
+    #[invariant]
+    pub fn backing_cell_nonempty(&self) -> bool {
+        self.backing_cells.len() > 0
+    }
+
+    #[invariant]
+    pub fn head_leq_tail(&self) -> bool {
+        self.head <= self.tail
+    }
+
     init!{
         initialize(backing_cells: Seq<CellId>, storage: Map<nat, PermData<T>>) {
             // Upon initialization, the user needs to deposit _all_ the relevant
@@ -231,7 +241,8 @@ tokenized_state_machine!{FifoQueue<T> {
             // Withdraw ("check out") the permission stored at index `tail`.
             // This creates a proof obligation for the transition system to prove that
             // there is actually a permission stored at this index.
-            withdraw storage -= [tail => let perm] by {
+            withdraw storage -= [(tail % pre.backing_cells.len()) => let perm] by {
+                lemma_mod_pos_bound(tail as int, pre.backing_cells.len() as int);
                 assert(pre.valid_storage_at_idx(tail));
             };
 
@@ -285,7 +296,7 @@ tokenized_state_machine!{FifoQueue<T> {
             update tail = next_tail;
 
             // Check the permission back into the storage map.
-            deposit storage += [tail => perm] by { assert(pre.valid_storage_at_idx(tail)); };
+            deposit storage += [tail => perm] by { assert(pre.valid_storage_at_idx(tail % pre.backing_cells.len())); };
         }
     }
 
