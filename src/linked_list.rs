@@ -1,5 +1,5 @@
 use core::mem::MaybeUninit;
-use std::borrow::BorrowMut;
+use std::borrow::{Borrow, BorrowMut};
 
 use vstd::cell::pcell::{self, PCell};
 use vstd::cell::{CellId, MemContents};
@@ -175,7 +175,37 @@ impl <T> List<T> {
         self.wf(),
         self@ == old(self)@.insert(0, elem)
     {
-        assume(false)
+        match self.first.take() {
+            Some(link) => {
+                let temp = link;
+                let (pptr, Tracked(mut pptr_perm)) = PPtr::new(Node{
+                    value: elem,
+                    next: Some(temp)
+                });
+                proof {
+                    self.pptr_perms.borrow_mut().tracked_insert(0 as int, pptr_perm);
+                }
+                let (pcell, Tracked(mut pcell_perm)) = PCell::new(pptr);
+                proof {
+                    self.cell_perms.borrow_mut().tracked_insert(0 as int, pcell_perm);
+                }
+                self.first = Some(pcell);
+            },
+            None => {
+                let (pptr, Tracked(mut pptr_perm)) = PPtr::new(Node{
+                    value: elem,
+                    next: None
+                });
+                proof {
+                    self.pptr_perms.borrow_mut().tracked_insert(0 as int, pptr_perm);
+                }
+                let (pcell, Tracked(mut pcell_perm)) = PCell::new(pptr);
+                proof {
+                    self.cell_perms.borrow_mut().tracked_insert(0 as int, pcell_perm);
+                }
+                self.first = Some(pcell);
+            },
+        }
     }
 
     pub fn append(&mut self, elem : T)
