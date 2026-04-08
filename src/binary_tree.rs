@@ -30,7 +30,7 @@ impl<K, V> Node<K, V> {
     perm: TreePerm<K, V>
 ) -> Map<K, V> 
     where K: Copy
-    decreases perm 
+    decreases perm, cell 
     {
         match (cell, perm) {
             (Some(c), TreePerm::Node { perm, left, right }) => {
