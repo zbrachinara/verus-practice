@@ -125,39 +125,19 @@ impl <T> List<T> {
         self.wf(),
         self@ == old(self)@.insert(0, elem)
     {
-        match self.first.take() {
-            Some(link) => {
-                let temp = link;
-                let (pptr, Tracked(mut pptr_perm)) = PPtr::new(Node{
-                    value: elem,
-                    next: Some(temp)
-                });
-                proof {
-                    self.pptr_perms.borrow_mut().tracked_insert(0 as int, pptr_perm);
-                }
-                let (pcell, Tracked(mut pcell_perm)) = PCell::new(pptr);
-                proof {
-                    self.cell_perms.borrow_mut().tracked_insert(0 as int, pcell_perm);
-                }
-                self.first = Some(pcell);
-                assume(false);
-            },
-            None => {
-                let (pptr, Tracked(mut pptr_perm)) = PPtr::new(Node{
-                    value: elem,
-                    next: None
-                });
-                proof {
-                    self.pptr_perms.borrow_mut().tracked_insert(0 as int, pptr_perm);
-                }
-                let (pcell, Tracked(mut pcell_perm)) = PCell::new(pptr);
-                proof {
-                    self.cell_perms.borrow_mut().tracked_insert(0 as int, pcell_perm);
-                }
-                self.first = Some(pcell);
-                assume(false);
-            },
+        let node = Node {
+            value: elem,
+            next: self.first.take(),
+        };
+        let (pptr, Tracked(pptr_perms)) = PPtr::new(node);
+        let (pcell, Tracked(pcell_perms)) = PCell::new(pptr);
+        proof {
+            self.pptr_perms.borrow_mut().tracked_insert(0, pptr_perms);
+            self.cell_perms.borrow_mut().tracked_insert(0, pcell_perms);
         }
+        self.first = Some(pcell);
+
+        assume(false);
     }
 
     pub fn append(&mut self, elem : T)
