@@ -88,17 +88,6 @@ impl <T> List<T> {
         }
     }
     pub closed spec fn len(self) -> nat { self.permissions().len() }
-    // closed spec fn node_at(self, node_ptr : PPtr<Node<T>>, index : int) -> bool {
-    //     index < self.len() && self.pptr_perms@[index].unwrap().pptr() == node_ptr
-    // }
-    // closed spec fn contains_node(self, node_ptr : PPtr<Node<T>>) -> bool {
-    //     exists|y| self.node_at(node_ptr, y)
-    // }
-    // closed spec fn index_of(self, node_ptr : PPtr<Node<T>>) -> int
-    // recommends self.contains_node(node_ptr)
-    // {
-    //     choose|y| self.node_at(node_ptr, y)
-    // }
 
     pub closed spec fn view(self) -> Seq<T>
         recommends self.wf()
@@ -137,7 +126,13 @@ impl <T> List<T> {
         }
         self.first = Some(pcell);
 
-        assume(false);
+        assert forall|ix| 0 <= ix < self.permissions().len()
+            implies self.permissions().contains(ix)
+        by {
+            if ix > 0 {
+                assert(old(self).permissions().contains(ix - 1));
+            }
+        }
     }
 
     pub fn append(&mut self, elem : T)
