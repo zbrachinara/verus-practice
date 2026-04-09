@@ -234,7 +234,9 @@ impl <T> List<T> {
                 assert forall|ix| 0 <= ix < self.permissions().len()
                     implies self.permissions().contains(ix)
                 by {
-                    assume(false);
+                    if (ix <= link_ix) {
+                        assert(old(self).permissions().contains(ix));
+                    }
                 }
             }
         }
