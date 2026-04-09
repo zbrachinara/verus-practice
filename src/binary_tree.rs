@@ -11,49 +11,87 @@ struct Node<K, V> {
     right: Option<PCell<Box<Node<K, V>>>>,
 }
 
-#[verifier::reject_recursive_types(K)]
-#[verifier::reject_recursive_types(V)]
-tracked enum TreePerm<K, V> {
-    // empty slot – no permission needed.
+enum TreePerm<K, V> where K: Copy {
     Empty,
-    // non-empty node: permission for this cell + recursive perms for children.
     Node {
-        tracked perm:  PointsTo<Box<Node<K, V>>>,
-        tracked left:  Box<TreePerm<K, V>>,
-        tracked right: Box<TreePerm<K, V>>,
+        perm:  PointsTo<Box<Node<K, V>>>,
+        left:  Box<TreePerm<K, V>>,
+        right: Box<TreePerm<K, V>>,
     },
 }
 
-impl<K, V> Node<K, V> {
+impl<K: Copy, V> Node<K, V> {
     spec fn opt_as_map (
-    cell: Option<PCell<Box<Node<K, V>>>>,
     perm: TreePerm<K, V>
 ) -> Map<K, V> 
-    where K: Copy
-    decreases perm, cell 
+    decreases Node::<K, V>::tree_perm_rank(perm) 
+    via Node::<K, V>::opt_as_map_decreases
     {
-        match (cell, perm) {
-            (Some(c), TreePerm::Node { perm, left, right }) => {
+        match perm {
+            TreePerm::Empty => Map::empty(),
+            TreePerm::Node { perm, left, right } => {
                 let node = perm.value();
                 node.as_map(*left, *right)
             },
-            (None, TreePerm::Empty) => Map::empty(),
-            _ => Map::empty()
+        }
+    }
+
+    spec fn tree_perm_rank(perm: TreePerm<K, V>) -> nat
+        decreases perm
+    {
+        match perm {
+            TreePerm::Empty => 0,
+            TreePerm::Node { perm, left, right } =>
+                1 + Self::tree_perm_rank(*left) + Self::tree_perm_rank(*right),
         }
     }
 
     spec fn as_map (
         self,
-        left:  TreePerm<K, V>,
-        right: TreePerm<K, V>,
+        left: TreePerm<K, V>,
+        right: TreePerm<K, V>
     ) -> Map<K, V>
-        where K: Copy
-        decreases left, right
+        decreases Node::<K, V>::tree_perm_rank(left), Node::<K, V>::tree_perm_rank(right)
+        via Node::<K, V>::as_map_decreases
     {
-        Node::<K, V>::opt_as_map(self.left, left)
-          .union_prefer_right(Node::<K, V>::opt_as_map(self.right, right))
+        Node::<K, V>::opt_as_map(left)
+          .union_prefer_right(Node::<K, V>::opt_as_map(right))
           .insert(self.key, self.value)
     }
+
+    #[via_fn]
+proof fn as_map_decreases(self, left: TreePerm<K, V>, right: TreePerm<K, V>) {
+    match (left, right) {
+        (TreePerm::Empty, TreePerm::Empty) => {},
+        (TreePerm::Empty, TreePerm::Node { perm, left: l, right: r }) => {
+            assert(Self::tree_perm_rank(*l) + Self::tree_perm_rank(*r) <
+                    Self::tree_perm_rank(TreePerm::Node { perm, left: l, right: r }));
+        },
+        (TreePerm::Node { perm, left: l, right: r }, TreePerm::Empty) => {
+            assert(Self::tree_perm_rank(*l) + Self::tree_perm_rank(*r) <
+                   Self::tree_perm_rank(TreePerm::Node { perm, left: l, right: r }));
+        },
+        (TreePerm::Node { perm, left: l, right: r }, 
+            TreePerm::Node { perm: a, left: b, right: c }) => {
+            assert(Self::tree_perm_rank(*l) + Self::tree_perm_rank(*r) +
+                   Self::tree_perm_rank(*b) + Self::tree_perm_rank(*c) <
+                   Self::tree_perm_rank(TreePerm::Node { perm, left: l, right: r }) +
+                   Self::tree_perm_rank(TreePerm::Node { perm: a, left: b, right: c }));
+        },
+    }
+}
+
+
+    #[via_fn]
+proof fn opt_as_map_decreases(perm: TreePerm<K, V>) {
+    match perm {
+        TreePerm::Empty => {},
+        TreePerm::Node { perm, left: l, right: r } => {
+            assert(Self::tree_perm_rank(*l) + Self::tree_perm_rank(*r) <
+                    Self::tree_perm_rank(TreePerm::Node { perm, left: l, right: r }));
+        }
+    }
+}
 }
 
 }
