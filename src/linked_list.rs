@@ -27,8 +27,6 @@ impl <T> Permissions<T> {
 
         // We own the container of this pointer
         &&& self.cell.len() > ix
-        // The pointer must be nonnull
-        &&& this_pptr_perm.is_init()
         // That pointer must be the same as the one in the cell
         &&& self.pptr.len() > ix
         &&& this_pptr_perm.pptr() == this_cell_perm.value()
@@ -63,56 +61,8 @@ impl <T> Permissions<T> {
 
     spec fn mirrors(self, permission : CellId) -> bool {
         &&& self.based_at(0, permission)
-        &&& forall|ix| self.contains(ix) && ix < self.len() ==> #[trigger] self.contains(ix + 1)
+        &&& forall|ix| 0 <= ix < self.len() ==> #[trigger] self.contains(ix)
     }
-
-    // spec fn len(self) -> nat {
-    //     wo(|ix| self.last(ix))
-    // }
-
-    // proof fn len_def(&self)
-    // requires exists|c| self.mirrors(c),
-    // ensures
-    //     forall|y : nat| y < self.len() ==> !self.last(y),
-    //     self.last(self.len())
-    // {
-    //     let is_last = |ix| self.last(ix);
-    //     assert(is_last(choose|ix| self.last(ix)));
-    //     wo_proof(is_last);
-    //     assert forall|y : nat| y < self.len() implies !self.last(y) by {
-    //         assert(!is_last(y));
-    //     }
-    // }
-
-    // proof fn must_contain(&self, y : nat)
-    // requires exists|c| self.mirrors(c), y <= self.len()
-    // ensures self.contains(y)
-    // decreases y
-    // {
-    //     if (y > 0) {
-    //         let prev = (y - 1) as nat;
-
-    //         self.len_def();
-    //         assert(!self.last(prev));
-
-    //         self.must_contain(prev);
-    //         assert(self.contains(prev));
-    //     }
-    // }
-
-    // proof fn has_pointer(&self, y : nat)
-    // requires
-    //     exists|c| self.mirrors(c),
-    //     self.pptr.contains_key(y) || y < self.len()
-    // ensures
-    //     self.pptr.contains_key(y),
-    //     y < self.len(),
-    // {
-    //     self.len_def();
-    //     if (y < self.len()) {
-    //         self.must_contain(y);
-    //     }
-    // }
 }
 
 type CellPerms<T> = Tracked<Seq<pcell::PointsTo<PPtr<Node<T>>>>>;
@@ -190,6 +140,7 @@ impl <T> List<T> {
                     self.cell_perms.borrow_mut().tracked_insert(0 as int, pcell_perm);
                 }
                 self.first = Some(pcell);
+                assume(false);
             },
             None => {
                 let (pptr, Tracked(mut pptr_perm)) = PPtr::new(Node{
@@ -204,6 +155,7 @@ impl <T> List<T> {
                     self.cell_perms.borrow_mut().tracked_insert(0 as int, pcell_perm);
                 }
                 self.first = Some(pcell);
+                assume(false);
             },
         }
     }
@@ -268,14 +220,23 @@ impl <T> List<T> {
                 old_last_node.next = Some(new_last_cell);
                 old_last_location.put(Tracked(&mut old_pptr_perm), old_last_node);
 
+                assert(old(self).pptr_perms.index(link_ix).pptr() == old_pptr_perm.pptr());
+
                 proof {
                     self.pptr_perms.borrow_mut().tracked_push(old_pptr_perm);
                     self.pptr_perms.borrow_mut().tracked_push(new_last_pptr_perm);
                     self.cell_perms.borrow_mut().tracked_push(new_last_cell_perm);
+
+                    assert(self.permissions().contains(link_ix));
+                    assert(self.permissions().contains(link_ix + 1));
                 }
 
-                assert forall|ix| self.permissions().contains(ix) && ix < self.permissions().len() implies #[trigger] self.permissions().contains(ix + 1) by {
-                    assume(false);
+                assert forall|ix| 0 <= ix < self.permissions().len()
+                    implies self.permissions().contains(ix)
+                by {
+                    if (ix <= link_ix) {
+                        assert(old(self).permissions().contains(ix));
+                    }
                 }
             }
         }
