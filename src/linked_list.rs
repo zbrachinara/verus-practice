@@ -88,17 +88,6 @@ impl <T> List<T> {
         }
     }
     pub closed spec fn len(self) -> nat { self.permissions().len() }
-    // closed spec fn node_at(self, node_ptr : PPtr<Node<T>>, index : int) -> bool {
-    //     index < self.len() && self.pptr_perms@[index].unwrap().pptr() == node_ptr
-    // }
-    // closed spec fn contains_node(self, node_ptr : PPtr<Node<T>>) -> bool {
-    //     exists|y| self.node_at(node_ptr, y)
-    // }
-    // closed spec fn index_of(self, node_ptr : PPtr<Node<T>>) -> int
-    // recommends self.contains_node(node_ptr)
-    // {
-    //     choose|y| self.node_at(node_ptr, y)
-    // }
 
     pub closed spec fn view(self) -> Seq<T>
         recommends self.wf()
@@ -125,38 +114,24 @@ impl <T> List<T> {
         self.wf(),
         self@ == old(self)@.insert(0, elem)
     {
-        match self.first.take() {
-            Some(link) => {
-                let temp = link;
-                let (pptr, Tracked(mut pptr_perm)) = PPtr::new(Node{
-                    value: elem,
-                    next: Some(temp)
-                });
-                proof {
-                    self.pptr_perms.borrow_mut().tracked_insert(0 as int, pptr_perm);
-                }
-                let (pcell, Tracked(mut pcell_perm)) = PCell::new(pptr);
-                proof {
-                    self.cell_perms.borrow_mut().tracked_insert(0 as int, pcell_perm);
-                }
-                self.first = Some(pcell);
-                assume(false);
-            },
-            None => {
-                let (pptr, Tracked(mut pptr_perm)) = PPtr::new(Node{
-                    value: elem,
-                    next: None
-                });
-                proof {
-                    self.pptr_perms.borrow_mut().tracked_insert(0 as int, pptr_perm);
-                }
-                let (pcell, Tracked(mut pcell_perm)) = PCell::new(pptr);
-                proof {
-                    self.cell_perms.borrow_mut().tracked_insert(0 as int, pcell_perm);
-                }
-                self.first = Some(pcell);
-                assume(false);
-            },
+        let node = Node {
+            value: elem,
+            next: self.first.take(),
+        };
+        let (pptr, Tracked(pptr_perms)) = PPtr::new(node);
+        let (pcell, Tracked(pcell_perms)) = PCell::new(pptr);
+        proof {
+            self.pptr_perms.borrow_mut().tracked_insert(0, pptr_perms);
+            self.cell_perms.borrow_mut().tracked_insert(0, pcell_perms);
+        }
+        self.first = Some(pcell);
+
+        assert forall|ix| 0 <= ix < self.permissions().len()
+            implies self.permissions().contains(ix)
+        by {
+            if ix > 0 {
+                assert(old(self).permissions().contains(ix - 1));
+            }
         }
     }
 
